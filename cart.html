@@ -16,6 +16,14 @@
 .s-cart-count{background:#ff3b30;color:#fff;font-size:.64rem;font-weight:700;border-radius:99px;padding:1px 5px;min-width:16px;text-align:center;display:inline-block}
 .s-btn-login{background:#1d1d1f!important;color:#fff!important;border-radius:980px!important;padding:.38rem 1.1rem!important;font-weight:600!important}
 .s-btn-login:hover{opacity:.85!important}
+.cart-layout{display:grid;grid-template-columns:1fr 340px;gap:1.5rem;align-items:start}
+@media(max-width:768px){
+  .cart-layout{grid-template-columns:1fr}
+  .s-header-inner{padding:.65rem 1rem}
+  .s-nav{gap:.5rem}
+  .cart-item{flex-wrap:wrap;gap:.5rem}
+  .cart-item>div:last-child,.cart-item>button:last-child{margin-left:auto}
+}
   </style>
   <style>body{visibility:hidden}</style>
 </head>
@@ -35,7 +43,7 @@
 
 <div class="container">
   <h1 class="page-title">購物車</h1>
-  <div style="display:grid;grid-template-columns:1fr 340px;gap:1.5rem;align-items:start;" id="cart-layout">
+  <div class="cart-layout" id="cart-layout">
     <!-- 商品清單 -->
     <div class="card">
       <div id="cart-items"></div>

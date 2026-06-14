@@ -14,6 +14,21 @@
 .s-nav a,.s-nav button{font-size:.85rem;color:#6e6e73;background:none;border:none;cursor:pointer;padding:.35rem .6rem;border-radius:8px;transition:color .15s,background .15s;white-space:nowrap;text-decoration:none;font-family:inherit}
 .s-nav a:hover,.s-nav button:hover{color:#1d1d1f;background:rgba(0,0,0,.04)}
 .s-cart-count{background:#ff3b30;color:#fff;font-size:.64rem;font-weight:700;border-radius:99px;padding:1px 5px;min-width:16px;text-align:center;display:inline-block}
+.member-layout{display:grid;grid-template-columns:240px 1fr;gap:1.5rem;align-items:start}
+.member-sidebar-tabs{display:flex;flex-direction:column;gap:.25rem}
+@media(max-width:768px){
+  .s-header-inner{padding:.65rem 1rem}
+  .member-layout{grid-template-columns:1fr}
+  .member-sidebar-info{display:flex;align-items:center;gap:1rem;padding:.5rem 0 .75rem;text-align:left}
+  .member-sidebar-info #avatar{width:52px;height:52px;font-size:1.25rem;flex-shrink:0;margin:0}
+  .member-sidebar-tabs{flex-direction:row;overflow-x:auto;scrollbar-width:none;gap:.25rem;padding-bottom:.25rem}
+  .member-sidebar-tabs::-webkit-scrollbar{display:none}
+  .member-sidebar-tabs .tab-btn{white-space:nowrap;flex-shrink:0;border-radius:980px;border:1.5px solid var(--border);padding:.4rem .9rem;font-size:.83rem}
+  .member-sidebar-tabs .tab-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+}
+@media(max-width:480px){
+  .s-nav a:not([href='cart.html']){display:none}
+}
   </style>
   <style>body{visibility:hidden}</style>
 </head>
@@ -31,15 +46,17 @@
 </header>
 
 <div class="container">
-  <div style="display:grid;grid-template-columns:240px 1fr;gap:1.5rem;align-items:start">
+  <div class="member-layout">
     <!-- 側邊欄 -->
     <div class="card">
-      <div style="text-align:center;padding:.5rem 0 1.25rem">
+      <div class="member-sidebar-info" style="text-align:center;padding:.5rem 0 1.25rem">
         <div style="width:72px;height:72px;border-radius:50%;background:var(--primary);color:#fff;font-size:1.75rem;display:flex;align-items:center;justify-content:center;margin:0 auto .75rem" id="avatar">👤</div>
-        <div id="member-name" style="font-weight:700"></div>
-        <div id="member-email" style="font-size:.8rem;color:var(--muted)"></div>
+        <div>
+          <div id="member-name" style="font-weight:700"></div>
+          <div id="member-email" style="font-size:.8rem;color:var(--muted)"></div>
+        </div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:.25rem">
+      <div class="member-sidebar-tabs">
         <button class="tab-btn active" onclick="showTab('orders',this)">我的訂單</button>
         <button class="tab-btn" onclick="showTab('profile',this)">個人資料</button>
         <button class="tab-btn" onclick="showTab('addresses',this)">收件地址</button>

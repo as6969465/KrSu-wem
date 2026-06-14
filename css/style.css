@@ -170,5 +170,27 @@ tr:hover td { background: #fafafa; }
 .sidebar-footer { padding: 1rem; border-top: 1px solid #2c2c2e; }
 
 /* ── Responsive ── */
-@media (max-width: 768px) { .container { padding: 1.25rem 1rem; } .card { padding: 1.1rem; border-radius: var(--radius-sm); } }
-@media (max-width: 640px) { .navbar-links a.hide-mobile { display: none; } }
+@media (max-width: 768px) {
+  .container { padding: 1.25rem 1rem; }
+  .card { padding: 1.1rem; border-radius: var(--radius-sm); }
+  .page-title { font-size: 1.35rem; }
+  .navbar-inner { padding: 0 1rem; }
+}
+@media (max-width: 640px) {
+  .navbar-links a.hide-mobile { display: none; }
+  /* Auth page */
+  .auth-page { padding: 0; align-items: flex-end; }
+  .auth-box { border-radius: var(--radius) var(--radius) 0 0; padding: 2rem 1.5rem 2.5rem; max-width: 100%; min-height: 60vh; }
+  /* Cart items */
+  .cart-item { flex-wrap: wrap; }
+  .cart-item-img { width: 60px; height: 60px; }
+  /* Summary */
+  .summary-box { padding: 1rem; }
+  /* Modals */
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal-box { border-radius: var(--radius) var(--radius) 0 0; max-height: 90vh; }
+  /* Tabs */
+  .tabs { overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn { white-space: nowrap; }
+}

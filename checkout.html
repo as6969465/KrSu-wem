@@ -13,6 +13,19 @@
 .s-nav{display:flex;align-items:center;gap:.75rem}
 .s-nav a,.s-nav button{font-size:.85rem;color:#6e6e73;background:none;border:none;cursor:pointer;padding:.35rem .6rem;border-radius:8px;transition:color .15s,background .15s;white-space:nowrap;text-decoration:none;font-family:inherit}
 .s-nav a:hover,.s-nav button:hover{color:#1d1d1f;background:rgba(0,0,0,.04)}
+.checkout-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.checkout-grid-full{grid-column:1/-1}
+.checkout-addr-grid{display:grid;grid-template-columns:120px 1fr;gap:1rem}
+.checkout-addr-full{grid-column:1/-1}
+@media(max-width:640px){
+  .s-header-inner{padding:.65rem 1rem}
+  .checkout-grid{grid-template-columns:1fr}
+  .checkout-grid-full{grid-column:auto}
+  .checkout-addr-grid{grid-template-columns:1fr}
+  .checkout-addr-full{grid-column:auto}
+  #step1 .card{grid-column:auto!important}
+  .step-indicator{font-size:.75rem;gap:.3rem}
+}
   </style>
   <style>body{visibility:hidden}</style>
 </head>
@@ -41,10 +54,10 @@
 
   <!-- 步驟一：填寫資料 -->
   <div id="step1">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
-      <div class="card" style="grid-column:1/-1">
+    <div class="checkout-grid" style="gap:1.5rem">
+      <div class="card checkout-grid-full">
         <h3 style="font-weight:700;margin-bottom:1rem">聯絡資訊</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="checkout-grid" style="gap:1rem">
           <div class="form-group">
             <label class="form-label">收件人姓名</label>
             <input id="recv-name" type="text" class="form-input" placeholder="姓名">
@@ -60,15 +73,15 @@
         </div>
       </div>
 
-      <div class="card" style="grid-column:1/-1">
+      <div class="card checkout-grid-full">
         <h3 style="font-weight:700;margin-bottom:1rem">取貨方式</h3>
         <div style="display:flex;flex-direction:column;gap:.75rem" id="shipping-options"></div>
       </div>
 
       <!-- 超商店取設定 -->
-      <div class="card" id="cvs-card" style="grid-column:1/-1;display:none">
+      <div class="card checkout-grid-full" id="cvs-card" style="display:none">
         <h3 style="font-weight:700;margin-bottom:1rem">超商取貨資訊</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div class="checkout-grid" style="gap:1rem">
           <div class="form-group">
             <label class="form-label">超商品牌</label>
             <select id="cvs-brand" class="form-select">
@@ -83,7 +96,7 @@
             <label class="form-label">門市名稱</label>
             <input id="cvs-store-name" type="text" class="form-input" placeholder="例：台北信義門市">
           </div>
-          <div class="form-group" style="grid-column:1/-1">
+          <div class="form-group checkout-grid-full">
             <label class="form-label">門市地址（選填）</label>
             <input id="cvs-store-addr" type="text" class="form-input" placeholder="例：台北市信義區信義路五段7號">
           </div>
@@ -91,9 +104,9 @@
       </div>
 
       <!-- 宅配地址 -->
-      <div class="card" id="home-card" style="grid-column:1/-1;display:none">
+      <div class="card checkout-grid-full" id="home-card" style="display:none">
         <h3 style="font-weight:700;margin-bottom:1rem">宅配地址</h3>
-        <div style="display:grid;grid-template-columns:120px 1fr;gap:1rem">
+        <div class="checkout-addr-grid" style="gap:1rem">
           <div class="form-group">
             <label class="form-label">郵遞區號</label>
             <input id="addr-zip" type="text" class="form-input" placeholder="100" maxlength="6">
@@ -102,14 +115,14 @@
             <label class="form-label">縣市 / 區鄉鎮</label>
             <input id="addr-city" type="text" class="form-input" placeholder="台北市信義區">
           </div>
-          <div class="form-group" style="grid-column:1/-1">
+          <div class="form-group checkout-addr-full">
             <label class="form-label">詳細地址</label>
             <input id="addr-detail" type="text" class="form-input" placeholder="XX路XX號XX樓">
           </div>
         </div>
       </div>
 
-      <div class="card" style="grid-column:1/-1">
+      <div class="card checkout-grid-full">
         <h3 style="font-weight:700;margin-bottom:1rem">付款方式</h3>
         <div style="display:flex;flex-direction:column;gap:.75rem">
           <label style="display:flex;align-items:center;gap:.75rem;cursor:pointer;padding:.75rem;border:1.5px solid var(--border);border-radius:8px">
@@ -127,7 +140,7 @@
         </div>
       </div>
 
-      <div class="card" style="grid-column:1/-1">
+      <div class="card checkout-grid-full">
         <div class="form-group" style="margin:0">
           <label class="form-label">備註</label>
           <textarea id="order-note" class="form-textarea" placeholder="特殊需求或備註事項"></textarea>
