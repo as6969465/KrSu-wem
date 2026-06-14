@@ -162,10 +162,15 @@ function showTab(tab, btn) {
 }
 
 async function loadOrders() {
-  const snap = await db.collection('orders').where('userId','==',currentUser.uid).get();
-  allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-    .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
-  renderOrders('');
+  try {
+    const snap = await db.collection('orders').where('userId','==',currentUser.uid).get();
+    allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
+    renderOrders('');
+  } catch(e) {
+    document.getElementById('order-list').innerHTML =
+      `<p style="color:var(--danger);text-align:center;padding:2rem">載入失敗：${escapeHtml(e.message)}</p>`;
+  }
 }
 
 function filterOrders(status, btn) {

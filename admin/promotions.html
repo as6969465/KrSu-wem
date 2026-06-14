@@ -106,8 +106,14 @@ auth.onAuthStateChanged(async user => {
 });
 
 async function loadCoupons() {
-  const snap = await db.collection('coupons').get();
-  coupons = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  try {
+    const snap = await db.collection('coupons').get();
+    coupons = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch(e) {
+    document.getElementById('coupon-tbody').innerHTML =
+      `<tr><td colspan="6" style="text-align:center;color:var(--danger)">載入失敗：${escapeHtml(e.message)}</td></tr>`;
+    return;
+  }
   renderTable();
 }
 

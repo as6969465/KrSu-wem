@@ -110,10 +110,15 @@ auth.onAuthStateChanged(async user => {
 });
 
 async function loadOrders() {
-  const snap = await db.collection('orders').get();
-  orders = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-    .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
-  renderTable();
+  try {
+    const snap = await db.collection('orders').get();
+    orders = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
+    renderTable();
+  } catch(e) {
+    document.getElementById('order-tbody').innerHTML =
+      `<tr><td colspan="8" style="text-align:center;color:var(--danger)">載入失敗：${escapeHtml(e.message)}</td></tr>`;
+  }
 }
 
 function renderTable() {

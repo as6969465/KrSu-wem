@@ -112,10 +112,19 @@ auth.onAuthStateChanged(async user => {
 });
 
 async function loadDashboard() {
-  const [ordersSnap, productsSnap] = await Promise.all([
-    db.collection('orders').get(),
-    db.collection('products').where('active','==',true).get()
-  ]);
+  let ordersSnap, productsSnap;
+  try {
+    [ordersSnap, productsSnap] = await Promise.all([
+      db.collection('orders').get(),
+      db.collection('products').where('active','==',true).get()
+    ]);
+  } catch(e) {
+    document.getElementById('recent-orders').innerHTML =
+      `<tr><td colspan="4" style="text-align:center;color:var(--danger)">載入失敗：${escapeHtml(e.message)}</td></tr>`;
+    document.getElementById('low-stock-list').innerHTML =
+      `<p style="color:var(--danger);font-size:.9rem">載入失敗</p>`;
+    return;
+  }
 
   const orders = ordersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
   const products = productsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
