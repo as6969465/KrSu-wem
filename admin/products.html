@@ -35,7 +35,10 @@
 <div class="main">
   <div class="main-header">
     <h1 style="font-size:1.1rem;font-weight:700">商品管理</h1>
-    <button class="btn btn-primary btn-sm" onclick="openModal()">＋ 新增商品</button>
+    <div style="display:flex;gap:.5rem">
+      <button class="btn btn-outline btn-sm" onclick="openCatModal()">🏷️ 管理分類</button>
+      <button class="btn btn-primary btn-sm" onclick="openModal()">＋ 新增商品</button>
+    </div>
   </div>
   <div style="padding:1.5rem">
     <!-- 篩選列 -->
@@ -74,8 +77,9 @@
       </div>
       <div class="form-group">
         <label class="form-label">分類</label>
-        <input id="p-cat" type="text" class="form-input" placeholder="例：服飾、電子、食品" list="cat-list">
-        <datalist id="cat-list"></datalist>
+        <select id="p-cat" class="form-select">
+          <option value="">— 請選擇分類 —</option>
+        </select>
       </div>
       <div class="form-group">
         <label class="form-label">狀態</label>
@@ -131,6 +135,21 @@
   </div>
 </div>
 
+<!-- 分類管理 Modal -->
+<div class="modal-overlay" id="cat-modal" style="display:none">
+  <div class="modal-box" style="max-width:420px">
+    <button class="modal-close" onclick="closeCatModal()">✕</button>
+    <h3 class="modal-title">管理商品分類</h3>
+    <div style="display:flex;gap:.5rem;margin-bottom:1rem">
+      <input id="new-cat-input" type="text" class="form-input" placeholder="輸入新分類名稱" style="flex:1"
+        onkeydown="if(event.key==='Enter')addCategory()">
+      <button class="btn btn-primary btn-sm" onclick="addCategory()">新增</button>
+    </div>
+    <div id="cat-list-area" style="display:flex;flex-direction:column;gap:.4rem;max-height:320px;overflow-y:auto"></div>
+    <p style="font-size:.78rem;color:var(--muted);margin-top:1rem">分類刪除後，已設定的商品不受影響</p>
+  </div>
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -138,6 +157,84 @@
 <script>
 let products = [];
 let editId = null;
+let categories = []; // 從 Firestore 載入的分類清單
+
+// ── 分類：載入 ────────────────────────────────────────────
+async function loadCategories() {
+  try {
+    const snap = await db.collection('settings').doc('categories').get();
+    categories = snap.exists ? (snap.data().items || []) : [];
+  } catch(e) { categories = []; }
+  refreshCatSelects();
+}
+
+// ── 分類：更新所有下拉選單 ────────────────────────────────
+function refreshCatSelects() {
+  // 商品表單下拉
+  const sel = document.getElementById('p-cat');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">— 請選擇分類 —</option>' +
+    categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  if (current) sel.value = current;
+
+  // 篩選下拉
+  const filter = document.getElementById('filter-cat');
+  const fCurrent = filter.value;
+  filter.innerHTML = '<option value="">所有分類</option>' +
+    categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  if (fCurrent) filter.value = fCurrent;
+}
+
+// ── 分類：儲存到 Firestore ────────────────────────────────
+async function saveCategories() {
+  await db.collection('settings').doc('categories').set({ items: categories });
+}
+
+// ── 分類 Modal ────────────────────────────────────────────
+function openCatModal() {
+  renderCatList();
+  document.getElementById('cat-modal').style.display = 'flex';
+}
+function closeCatModal() {
+  document.getElementById('cat-modal').style.display = 'none';
+}
+
+function renderCatList() {
+  const area = document.getElementById('cat-list-area');
+  if (!categories.length) {
+    area.innerHTML = '<p style="color:var(--muted);font-size:.88rem;text-align:center;padding:1rem">尚無分類，請新增</p>';
+    return;
+  }
+  area.innerHTML = categories.map((c, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.55rem .75rem;background:#f8fafc;border-radius:8px;border:1px solid var(--border)">
+      <span style="font-size:.9rem;font-weight:500">${escapeHtml(c)}</span>
+      <button onclick="deleteCategory(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.85rem;padding:.2rem .5rem;border-radius:4px;transition:color .15s"
+        onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--muted)'">✕ 刪除</button>
+    </div>`).join('');
+}
+
+async function addCategory() {
+  const input = document.getElementById('new-cat-input');
+  const name = input.value.trim();
+  if (!name) return;
+  if (categories.includes(name)) {
+    input.style.borderColor = 'var(--danger)';
+    setTimeout(() => input.style.borderColor = '', 1500);
+    return;
+  }
+  categories.push(name);
+  input.value = '';
+  await saveCategories();
+  refreshCatSelects();
+  renderCatList();
+}
+
+async function deleteCategory(idx) {
+  categories.splice(idx, 1);
+  await saveCategories();
+  refreshCatSelects();
+  renderCatList();
+}
 let uploadedImageUrl = ''; // 已上傳的圖片 URL
 
 // ── 圖片壓縮 → base64（Canvas API，無需外部套件或 Storage）──
@@ -234,6 +331,7 @@ auth.onAuthStateChanged(async user => {
   if (!user) return window.location.href = '../index.html';
   const doc = await db.collection('admins').doc(user.uid).get();
   if (!doc.exists) return window.location.href = '../shop.html';
+  await loadCategories();
   loadProducts();
 });
 
@@ -305,7 +403,8 @@ function resetImageUI() {
 function openModal(id) {
   editId = null;
   document.getElementById('modal-title').textContent = '新增商品';
-  ['p-name','p-cat','p-price','p-sale','p-stock','p-desc'].forEach(id => document.getElementById(id).value = '');
+  ['p-name','p-price','p-sale','p-stock','p-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('p-cat').value = '';
   document.getElementById('p-active').value = 'true';
   document.getElementById('modal-alert').innerHTML = '';
   resetImageUI();
