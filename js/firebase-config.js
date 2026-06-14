@@ -34,9 +34,10 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
-// 全域 helper：驗證並逸脫圖片 URL（僅允許 https://）
+// 全域 helper：驗證圖片來源（允許 https:// 或 base64 data:image/）
 function safeImgSrc(url) {
   if (!url) return '';
+  if (/^data:image\//i.test(url)) return url; // base64，直接使用
   return /^https:\/\//i.test(url) ? escapeHtml(url) : '';
 }
 
