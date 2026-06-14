@@ -13,10 +13,17 @@
       "*.docx",
       "node_modules/**"
     ],
+    "redirects": [
+      {
+        "source": "/",
+        "destination": "/shop.html",
+        "type": 302
+      }
+    ],
     "rewrites": [
       {
         "source": "**",
-        "destination": "/index.html"
+        "destination": "/shop.html"
       }
     ],
     "headers": [
