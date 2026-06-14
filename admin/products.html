@@ -336,18 +336,15 @@ auth.onAuthStateChanged(async user => {
 });
 
 async function loadProducts() {
-  const snap = await db.collection('products').get();
-  products = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-    .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
-  // 分類選項
-  const cats = [...new Set(products.map(p=>p.category).filter(Boolean))];
-  const sel = document.getElementById('filter-cat');
-  const dl = document.getElementById('cat-list');
-  cats.forEach(c => {
-    sel.innerHTML += `<option value="${c}">${c}</option>`;
-    dl.innerHTML += `<option value="${c}">`;
-  });
-  renderTable();
+  try {
+    const snap = await db.collection('products').get();
+    products = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
+    renderTable();
+  } catch(e) {
+    document.getElementById('product-tbody').innerHTML =
+      `<tr><td colspan="6" style="text-align:center;color:var(--danger)">載入失敗：${escapeHtml(e.message)}</td></tr>`;
+  }
 }
 
 function renderTable() {
