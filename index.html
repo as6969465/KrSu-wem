@@ -237,6 +237,19 @@ async function verifyPhoneOTP() {
 async function doRegister() {
   const name = document.getElementById('reg-name').value.trim();
   if (!name) return showAlert('請輸入姓名');
+
+  if (regMethod === 'email') {
+    const email = document.getElementById('reg-email').value.trim();
+    const pw = document.getElementById('reg-password').value;
+    const pw2 = document.getElementById('reg-password2').value;
+    if (!email) return showAlert('請填寫信箱');
+    if (pw.length < 6) return showAlert('密碼至少 6 個字元');
+    if (pw !== pw2) return showAlert('兩次密碼不一致');
+  } else {
+    const phone = document.getElementById('reg-phone').value.trim();
+    if (!phone) return showAlert('請輸入手機號碼');
+  }
+
   const btn = document.getElementById('btn-register');
   btn.disabled = true; btn.textContent = '處理中...';
 
@@ -244,21 +257,17 @@ async function doRegister() {
     if (regMethod === 'email') {
       const email = document.getElementById('reg-email').value.trim();
       const pw = document.getElementById('reg-password').value;
-      const pw2 = document.getElementById('reg-password2').value;
-      if (!email) return showAlert('請填寫信箱');
-      if (pw.length < 6) return showAlert('密碼至少 6 個字元');
-      if (pw !== pw2) return showAlert('兩次密碼不一致');
       const result = await auth.createUserWithEmailAndPassword(email, pw);
       await result.user.updateProfile({ displayName: name });
       await ensureUserDoc(result.user, name);
     } else {
       const phone = document.getElementById('reg-phone').value.trim();
-      if (!phone) return showAlert('請輸入手機號碼');
       initRecaptcha('recaptcha-container');
       confirmationResult = await auth.signInWithPhoneNumber(phone, recaptchaVerifier);
       document.getElementById('reg-step1').style.display = 'none';
       document.getElementById('reg-step2').style.display = 'block';
       showAlert('驗證碼已傳送', 'success');
+      btn.disabled = false; btn.textContent = '建立帳號';
     }
   } catch (e) {
     showAlert(getErrorMsg(e));
