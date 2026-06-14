@@ -461,14 +461,14 @@ function renderProducts() {
     const price   = getPrice(p);
     const hasSale = p.salePrice && p.salePrice < p.price;
     const soldOut = (p.stock ?? 999) <= 0;
-    const imgSrc  = safeImgSrc(p.imageUrl);
+    const hasImg  = !!p.imageUrl;
     const isNew   = p.createdAt && (Date.now()/1000 - p.createdAt.seconds < 86400 * 14);
 
     return `
     <div class="product-card" data-id="${escapeHtml(p.id)}" onclick="openProduct(this.dataset.id)">
       <div class="product-img-wrap">
-        ${imgSrc
-          ? `<img src="${imgSrc}" alt="${escapeHtml(p.name)}" loading="lazy">`
+        ${hasImg
+          ? `<img data-pid="${escapeHtml(p.id)}" alt="${escapeHtml(p.name)}" loading="lazy">`
           : `<div class="product-img-placeholder">🛍️</div>`}
         <div class="img-badges">
           ${soldOut ? '<span class="img-badge img-badge-soldout">售完</span>' : ''}
@@ -487,6 +487,12 @@ function renderProducts() {
       </div>
     </div>`;
   }).join('');
+
+  // 用 JS 設定 src（避免 base64 長字串在 innerHTML 屬性中被截斷）
+  grid.querySelectorAll('img[data-pid]').forEach(img => {
+    const p = allProducts.find(x => x.id === img.dataset.pid);
+    if (p && p.imageUrl) img.src = p.imageUrl;
+  });
 
   renderPagination();
 }
@@ -528,8 +534,8 @@ function openProduct(id) {
 
   document.getElementById('modal-body').innerHTML = `
     <div class="modal-img">
-      ${imgSrc
-        ? `<img src="${imgSrc}" alt="${escapeHtml(p.name)}">`
+      ${p.imageUrl
+        ? `<img id="modal-img-el" alt="${escapeHtml(p.name)}">`
         : `<div class="modal-img-placeholder">🛍️</div>`}
     </div>
     <div class="modal-info">
@@ -553,6 +559,11 @@ function openProduct(id) {
       </button>
     </div>`;
 
+  // 用 JS 設定圖片 src，避免 base64 在 innerHTML 被截斷
+  if (p.imageUrl) {
+    const modalImg = document.getElementById('modal-img-el');
+    if (modalImg) modalImg.src = p.imageUrl;
+  }
   if (!soldOut) {
     document.getElementById('btn-add-cart').addEventListener('click', () => addToCartFromModal(id));
   }
