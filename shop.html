@@ -277,7 +277,7 @@
 <!-- Header -->
 <header class="header">
   <div class="header-top">
-    <a href="shop.html" class="header-logo">KrSu<span>-wem</span></a>
+    <a href="shop.html" class="header-logo" id="store-logo">KrSu<span>-wem</span></a>
 
     <div class="header-search">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -371,9 +371,22 @@ auth.onAuthStateChanged(user => {
     document.getElementById('nav-login').style.display = '';
   }
   loadCartCount();
+  loadStoreName();
   loadBanners();
   loadProducts();
 });
+
+// ── 賣場名稱 ─────────────────────────────────────────────
+async function loadStoreName() {
+  try {
+    const snap = await db.collection('settings').doc('general').get();
+    const name = snap.exists ? snap.data().storeName : '';
+    if (name) {
+      document.getElementById('store-logo').textContent = name;
+      document.title = name + ' — 全部商品';
+    }
+  } catch(e) {}
+}
 
 // ── 公告橫幅 ─────────────────────────────────────────────
 async function loadBanners() {
