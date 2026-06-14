@@ -34,7 +34,7 @@
     <a href="shop.html" class="s-logo store-name-el">KrSu-wem</a>
     <nav class="s-nav">
       <a href="shop.html">繼續購物</a>
-      <a href="member.html" id="nav-member" style="display:none">👤 會員</a>
+      <a href="member.html" id="nav-member" style="display:none">👤 <span id="nav-username">會員</span></a>
       <button onclick="doLogout()" id="nav-logout" style="display:none">登出</button>
       <a href="index.html" id="nav-login" class="s-btn-login">登入 / 註冊</a>
     </nav>
@@ -84,6 +84,9 @@ const SHIPPING = 60;
 auth.onAuthStateChanged(user => {
   document.body.style.visibility = 'visible';
   if (user) {
+    setCartUser(user.uid);
+    const name = user.displayName || user.email.split('@')[0];
+    document.getElementById('nav-username').textContent = name;
     document.getElementById('nav-member').style.display = '';
     document.getElementById('nav-logout').style.display = '';
     document.getElementById('nav-login').style.display = 'none';

@@ -1,6 +1,11 @@
-// 購物車邏輯（localStorage）
+// 購物車邏輯（localStorage，每個帳號獨立）
 
-const CART_KEY = 'krsu_cart';
+let CART_KEY = 'krsu_cart_guest';
+
+// 登入後呼叫此函式，切換到該帳號的購物車
+function setCartUser(uid) {
+  CART_KEY = uid ? `krsu_cart_${uid}` : 'krsu_cart_guest';
+}
 
 function getCart() {
   try { return JSON.parse(localStorage.getItem(CART_KEY)) || []; }

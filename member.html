@@ -167,6 +167,7 @@ const STATUS_BADGE = { pending:'badge-warn', processing:'badge-info', shipped:'b
 auth.onAuthStateChanged(async user => {
   document.body.style.visibility = 'visible';
   if (!user) return window.location.href = 'index.html';
+  setCartUser(user.uid);
   applyStoreName(' — 會員中心');
   currentUser = user;
   loadCartCount();
