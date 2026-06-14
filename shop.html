@@ -90,8 +90,10 @@
 
     /* ── Product Card — Apple style ── */
     .product-card {
-      background: var(--card); border-radius: var(--radius);
+      background: #fff; border-radius: var(--radius);
+      border: 1px solid rgba(0,0,0,.08);
       overflow: hidden; cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
       transition: transform .28s ease, box-shadow .28s ease;
       display: flex; flex-direction: column;
     }
@@ -208,20 +210,50 @@
     }
     @media (max-width: 640px) {
       .modal-overlay { padding: 0; align-items: flex-end; }
-      .modal-box { border-radius: 22px 22px 0 0; max-height: 92vh; }
+      .modal-box { border-radius: 22px 22px 0 0; max-height: 78vh; margin-top: 22vh; }
       .modal-body { flex-direction: column; }
-      .modal-img-wrap { width: 100%; }
-      .modal-img-main { border-radius: 0; min-height: 180px; max-height: 220px; }
+      .modal-img-wrap { width: 100%; flex-shrink: 0; }
+      .modal-img-main { border-radius: 0; min-height: 0; max-height: none; aspect-ratio: 4/3; }
+      .modal-img-main img { width: 100%; height: 100%; object-fit: contain; padding: 1rem; }
       .modal-img-thumbs { border-radius: 0; }
-      .modal-img  { width: 100%; height: 220px; border-radius: 0; max-height: 220px; }
+      .modal-img  { width: 100%; height: auto; aspect-ratio: 4/3; border-radius: 0; max-height: none; }
       .modal-info { padding: 1.25rem 1.25rem 2rem; }
       .modal-name { font-size: 1.1rem; }
       .modal-price { font-size: 1.25rem; }
       .product-grid { gap: .75rem; }
       .product-info { padding: .75rem; }
       .product-name { font-size: .85rem; }
+      /* 手機版：隱藏右上角絕對定位關閉鈕，改用 sticky 頂列 */
+      .modal-close { display: none; }
+      .modal-handle-bar { display: flex; }
     }
+    /* 手機版 sticky 頂列（含拖曳把手 + 關閉按鈕） */
+    .modal-handle-bar {
+      display: none;
+      position: sticky; top: 0; z-index: 20;
+      background: #fff;
+      padding: .6rem 1rem .5rem;
+      border-radius: 22px 22px 0 0;
+      justify-content: center;
+      border-bottom: 1px solid rgba(0,0,0,.06);
+      touch-action: none;
+    }
+    .modal-handle { width: 36px; height: 4px; border-radius: 2px; background: #d2d2d7; }
+    /* ── Lightbox ── */
+    .lightbox { position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,.88); display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .2s; }
+    .lightbox.show { opacity:1; pointer-events:auto; }
+    .lightbox-img { max-width:90vw; max-height:90vh; object-fit:contain; border-radius:8px; transform:scale(.94); transition:transform .22s ease; user-select:none; display:block; }
+    .lightbox.show .lightbox-img { transform:scale(1); }
+    .lightbox-close { position:fixed; top:1.25rem; right:1.5rem; color:#fff; font-size:2rem; cursor:pointer; line-height:1; opacity:.8; transition:opacity .15s; background:none; border:none; }
+    .lightbox-close:hover { opacity:1; }
+    .lightbox-prev, .lightbox-next { position:fixed; top:50%; transform:translateY(-50%); color:#fff; font-size:1.4rem; cursor:pointer; background:rgba(255,255,255,.12); border:none; border-radius:50%; width:48px; height:48px; display:flex; align-items:center; justify-content:center; transition:background .15s; }
+    .lightbox-prev { left:1rem; }
+    .lightbox-next { right:1rem; }
+    .lightbox-prev:hover, .lightbox-next:hover { background:rgba(255,255,255,.22); }
+    .lightbox-prev.hidden, .lightbox-next.hidden { display:none; }
+    .modal-img-main img { cursor:zoom-in; }
   </style>
+  <script src="js/store-name-init.js"></script>
 </head>
 <body>
 
@@ -295,6 +327,9 @@
 <!-- 商品詳情 Modal -->
 <div class="modal-overlay" id="product-modal">
   <div class="modal-box">
+    <div class="modal-handle-bar" id="modal-handle-bar">
+      <div class="modal-handle"></div>
+    </div>
     <button class="modal-close" onclick="closeModal()">✕</button>
     <div class="modal-body" id="modal-body"></div>
   </div>
@@ -304,7 +339,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js"></script>
+<script src="/__/firebase/init.js"></script>
+  <script src="js/app-helpers.js"></script>
 <script src="js/cart.js"></script>
 <script>
 let allProducts = [];
@@ -429,7 +465,26 @@ function sortProducts(val) {
 }
 
 function setPageSize(n) { pageSize = n; currentPage = 1; renderProducts(); }
-function getPrice(p) { return p.salePrice ?? p.price ?? 0; }
+function getPrice(p) {
+  if (p.variants && p.variants.length) {
+    const prices = p.variants.map(v => v.salePrice ?? v.price ?? 0);
+    return Math.min(...prices);
+  }
+  return p.salePrice ?? p.price ?? 0;
+}
+
+function getPriceHtml(p) {
+  if (p.variants && p.variants.length) {
+    const prices = p.variants.map(v => v.salePrice ?? v.price ?? 0).sort((a, b) => a - b);
+    const lo = prices[0], hi = prices[prices.length - 1];
+    if (lo === hi) return `<span class="price-main">NT$ ${lo.toLocaleString()}</span>`;
+    return `<span class="price-main">NT$ ${lo.toLocaleString()} ~ ${hi.toLocaleString()}</span>`;
+  }
+  const hasSale = p.salePrice && p.salePrice < p.price;
+  const price   = p.salePrice ?? p.price ?? 0;
+  return `<span class="price-main ${hasSale ? 'price-sale' : ''}">NT$ ${Number(price).toLocaleString()}</span>`
+       + (hasSale ? `<span class="price-orig">NT$ ${Number(p.price).toLocaleString()}</span>` : '');
+}
 
 // ── 渲染商品 ─────────────────────────────────────────────
 function renderProducts() {
@@ -446,9 +501,10 @@ function renderProducts() {
   const page  = filteredProducts.slice(start, start + pageSize);
 
   grid.innerHTML = page.map(p => {
-    const price   = getPrice(p);
-    const hasSale = p.salePrice && p.salePrice < p.price;
-    const soldOut = (p.stock ?? 999) <= 0;
+    const hasSale = !p.variants?.length && p.salePrice && p.salePrice < p.price;
+    const soldOut = p.variants?.length
+      ? p.variants.every(v => (v.stock ?? 0) <= 0)
+      : (p.stock ?? 999) <= 0;
     const hasImg  = !!p.imageUrl;
     const isNew   = p.createdAt && (Date.now()/1000 - p.createdAt.seconds < 86400 * 14);
 
@@ -469,8 +525,7 @@ function renderProducts() {
         ${p.category ? `<div class="product-cat">${escapeHtml(p.category)}</div>` : ''}
         <div class="product-name">${escapeHtml(p.name)}</div>
         <div class="product-price-row">
-          <span class="price-main ${hasSale ? 'price-sale' : ''}">NT$ ${Number(price).toLocaleString()}</span>
-          ${hasSale ? `<span class="price-orig">NT$ ${Number(p.price).toLocaleString()}</span>` : ''}
+          ${getPriceHtml(p)}
         </div>
       </div>
     </div>`;
@@ -514,12 +569,14 @@ function goPage(n) {
 // ── 商品詳情 Modal ────────────────────────────────────────
 let _modalProductId = null;
 let _modalSelectedVariantId = null;
+let _lbCurrentIdx = 0;
 
 function openProduct(id) {
   const p = allProducts.find(x => x.id === id);
   if (!p) return;
   _modalProductId = id;
   _modalSelectedVariantId = null;
+  _lbCurrentIdx = 0;
 
   const hasVariants = p.variants && p.variants.length > 0;
   const images = (p.images && p.images.length) ? p.images : (p.imageUrl ? [p.imageUrl] : []);
@@ -536,8 +593,11 @@ function openProduct(id) {
          ${hasSale ? `<span class="modal-price-orig">NT$ ${Number(p.price).toLocaleString()}</span>` : ''}
        </span>`;
 
+  const totalVariantStock = hasVariants
+    ? p.variants.reduce((sum, v) => sum + (Number(v.stock) || 0), 0)
+    : 0;
   const stockHtml = hasVariants
-    ? `<div class="modal-stock" id="modal-stock-display"></div>`
+    ? `<div class="modal-stock" id="modal-stock-display">庫存合計：${totalVariantStock}（請選擇樣式）</div>`
     : `<div class="modal-stock" id="modal-stock-display">${baseSoldOut ? '❌ 已售完' : `庫存：${escapeHtml(String(p.stock ?? '充足'))}`}</div>`;
 
   const variantHtml = hasVariants ? `
@@ -587,7 +647,10 @@ function openProduct(id) {
   // Set images via JS to avoid base64 truncation in innerHTML
   if (images.length) {
     const mainImg = document.getElementById('modal-main-img');
-    if (mainImg) mainImg.src = safeImgSrc(images[0]) || '';
+    if (mainImg) {
+      mainImg.src = safeImgSrc(images[0]) || '';
+      mainImg.onclick = () => openLightbox(images, _lbCurrentIdx ?? 0);
+    }
     const thumbs = document.querySelectorAll('#modal-thumbs .modal-thumb');
     thumbs.forEach((t, i) => { t.src = safeImgSrc(images[i]) || ''; });
   }
@@ -610,6 +673,7 @@ function switchModalImg(idx) {
   const mainImg = document.getElementById('modal-main-img');
   if (mainImg && images[idx]) mainImg.src = safeImgSrc(images[idx]) || '';
   document.querySelectorAll('#modal-thumbs .modal-thumb').forEach((t, i) => t.classList.toggle('active', i === idx));
+  _lbCurrentIdx = idx;
 }
 
 // Select a variant
@@ -629,7 +693,13 @@ function selectVariant(productId, variantId) {
   // Update main image if variant has its own image
   if (v.imageUrl) {
     const mainImg = document.getElementById('modal-main-img');
-    if (mainImg) mainImg.src = safeImgSrc(v.imageUrl) || '';
+    if (mainImg) {
+      mainImg.src = safeImgSrc(v.imageUrl) || '';
+      const p2 = allProducts.find(x => x.id === productId);
+      const imgs = (p2.images && p2.images.length) ? p2.images : (p2.imageUrl ? [p2.imageUrl] : []);
+      const vidx = imgs.indexOf(v.imageUrl);
+      _lbCurrentIdx = vidx >= 0 ? vidx : 0;
+    }
     document.querySelectorAll('#modal-thumbs .modal-thumb').forEach(t => t.classList.remove('active'));
   }
 
@@ -669,6 +739,40 @@ function closeModal() {
 document.getElementById('product-modal').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
+
+// ── 手機版往上滑關閉 ──────────────────────────────────────
+(function() {
+  const handleBar = document.getElementById('modal-handle-bar');
+  const box = handleBar.closest('.modal-box');
+  let startY = 0, curY = 0, dragging = false;
+
+  handleBar.addEventListener('touchstart', function(e) {
+    startY = e.touches[0].clientY;
+    curY = startY;
+    dragging = true;
+    box.style.transition = 'none';
+  }, { passive: true });
+
+  handleBar.addEventListener('touchmove', function(e) {
+    if (!dragging) return;
+    curY = e.touches[0].clientY;
+    const dy = curY - startY; // 負 = 往上
+    if (dy < 0) {
+      box.style.transform = `translateY(${dy}px)`;
+      box.style.opacity = String(Math.max(0.4, 1 + dy / 200));
+    }
+  }, { passive: true });
+
+  handleBar.addEventListener('touchend', function() {
+    if (!dragging) return;
+    dragging = false;
+    const dy = curY - startY;
+    box.style.transition = '';
+    box.style.transform = '';
+    box.style.opacity = '';
+    if (dy < -60) closeModal();
+  });
+})();
 
 function changeQty(d) {
   const input = document.getElementById('modal-qty');
@@ -716,6 +820,53 @@ function showToast(msg) {
 }
 
 function doLogout() { auth.signOut().then(() => location.reload()); }
+
+// ── Lightbox ──────────────────────────────────────────────
+let _lbImages = [], _lbIdx = 0;
+
+function openLightbox(images, startIdx) {
+  _lbImages = images;
+  _lbIdx = startIdx;
+  const lb = document.getElementById('lightbox');
+  const img = document.getElementById('lightbox-img');
+  img.src = safeImgSrc(images[_lbIdx]) || '';
+  lb.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  updateLbNav();
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function lbPrev() {
+  if (_lbIdx > 0) { _lbIdx--; document.getElementById('lightbox-img').src = safeImgSrc(_lbImages[_lbIdx]) || ''; updateLbNav(); }
+}
+
+function lbNext() {
+  if (_lbIdx < _lbImages.length - 1) { _lbIdx++; document.getElementById('lightbox-img').src = safeImgSrc(_lbImages[_lbIdx]) || ''; updateLbNav(); }
+}
+
+function updateLbNav() {
+  document.getElementById('lb-prev').classList.toggle('hidden', _lbIdx === 0);
+  document.getElementById('lb-next').classList.toggle('hidden', _lbIdx === _lbImages.length - 1);
+}
+
+document.addEventListener('keydown', e => {
+  const lb = document.getElementById('lightbox');
+  if (!lb.classList.contains('show')) return;
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') lbPrev();
+  if (e.key === 'ArrowRight') lbNext();
+});
 </script>
+
+<div class="lightbox" id="lightbox" onclick="if(event.target===this)closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <button class="lightbox-prev hidden" id="lb-prev" onclick="lbPrev()">‹</button>
+  <img class="lightbox-img" id="lightbox-img" alt="商品圖片放大">
+  <button class="lightbox-next hidden" id="lb-next" onclick="lbNext()">›</button>
+</div>
 </body>
 </html>

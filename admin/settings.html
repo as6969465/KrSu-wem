@@ -31,6 +31,7 @@
     .stat-sub { font-size:.8rem; color:var(--muted); }
     @media(max-width:900px){ .stat-grid{grid-template-columns:repeat(2,1fr);} .sidebar{display:none;} }
   </style>
+  <script src="../js/store-name-init.js"></script>
 </head>
 <body>
 <aside class="sidebar">
@@ -67,6 +68,28 @@
         <button class="btn btn-primary" onclick="saveStoreName()">儲存</button>
       </div>
       <div id="store-alert" style="margin-top:.75rem"></div>
+    </div>
+
+    <!-- 匯款帳號 -->
+    <div class="card">
+      <h3 style="font-weight:700;margin-bottom:.5rem">🏦 銀行匯款帳號</h3>
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">顧客選擇「銀行轉帳」付款後，可在「我的訂單」查看此帳號。</p>
+      <div style="display:flex;flex-direction:column;gap:.75rem;max-width:400px">
+        <div>
+          <label class="form-label">銀行名稱</label>
+          <input id="bank-name" type="text" class="form-input" placeholder="例：台灣銀行 012">
+        </div>
+        <div>
+          <label class="form-label">戶名</label>
+          <input id="bank-holder" type="text" class="form-input" placeholder="例：王小明">
+        </div>
+        <div>
+          <label class="form-label">帳號</label>
+          <input id="bank-account" type="text" class="form-input" placeholder="例：012-123456789012">
+        </div>
+        <button class="btn btn-primary" style="width:fit-content" onclick="saveBankAccount()">儲存</button>
+      </div>
+      <div id="bank-alert" style="margin-top:.75rem"></div>
     </div>
 
     <!-- 公告橫幅 -->
@@ -132,7 +155,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="../js/firebase-config.js"></script>
+<script src="/__/firebase/init.js"></script>
+  <script src="../js/app-helpers.js"></script>
 <script>
 let banners = [];
 
@@ -148,10 +172,32 @@ auth.onAuthStateChanged(async user => {
 async function loadGeneral() {
   try {
     const snap = await db.collection('settings').doc('general').get();
-    if (snap.exists && snap.data().storeName) {
-      document.getElementById('store-name').value = snap.data().storeName;
+    if (!snap.exists) return;
+    const d = snap.data();
+    if (d.storeName) document.getElementById('store-name').value = d.storeName;
+    if (d.bankAccount) {
+      document.getElementById('bank-name').value    = d.bankAccount.bankName    || '';
+      document.getElementById('bank-holder').value  = d.bankAccount.accountName || '';
+      document.getElementById('bank-account').value = d.bankAccount.accountNo   || '';
     }
   } catch(e) {}
+}
+
+async function saveBankAccount() {
+  const bankName    = document.getElementById('bank-name').value.trim();
+  const accountName = document.getElementById('bank-holder').value.trim();
+  const accountNo   = document.getElementById('bank-account').value.trim();
+  const alertEl     = document.getElementById('bank-alert');
+  if (!bankName || !accountName || !accountNo) {
+    alertEl.innerHTML = '<div class="alert alert-error">請填寫完整匯款資訊</div>'; return;
+  }
+  try {
+    await db.collection('settings').doc('general').set({ bankAccount: { bankName, accountName, accountNo } }, { merge: true });
+    alertEl.innerHTML = '<div class="alert alert-success">匯款帳號已儲存 ✓</div>';
+    setTimeout(() => alertEl.innerHTML = '', 3000);
+  } catch(e) {
+    alertEl.innerHTML = `<div class="alert alert-error">儲存失敗：${escapeHtml(e.message)}</div>`;
+  }
 }
 
 async function saveStoreName() {

@@ -39,6 +39,7 @@
     .variant-img-btn img { width:100%; height:100%; object-fit:cover; }
     .variant-headers { display:grid; grid-template-columns:1.4fr 80px 80px 70px 44px auto; gap:.45rem; padding:0 .7rem; margin-bottom:.2rem; }
   </style>
+  <script src="../js/store-name-init.js"></script>
 </head>
 <body>
 <aside class="sidebar">
@@ -143,7 +144,7 @@
             <div id="upload-status" style="font-size:.82rem;color:var(--muted);margin-top:.5rem">壓縮中...</div>
           </div>
         </div>
-        <input id="p-img-file" type="file" accept="image/*" style="display:none" onchange="handleImageUpload(this)">
+        <input id="p-img-file" type="file" accept="image/*" multiple style="display:none" onchange="handleImageUpload(this)">
         <div style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem">
           <span style="font-size:.8rem;color:var(--muted)">或貼上網址：</span>
           <input id="p-img-url" type="text" class="form-input" placeholder="https://..." style="flex:1;font-size:.85rem">
@@ -203,7 +204,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="../js/firebase-config.js"></script>
+<script src="/__/firebase/init.js"></script>
+  <script src="../js/app-helpers.js"></script>
 <script>
 let products = [];
 let editId = null;
@@ -326,8 +328,8 @@ function removeImage(idx) {
 }
 
 async function handleImageUpload(input) {
-  const file = input.files[0];
-  if (!file) return;
+  const files = Array.from(input.files);
+  if (!files.length) return;
   const zone = document.getElementById('upload-zone');
   const progress = document.getElementById('upload-progress');
   const status = document.getElementById('upload-status');
@@ -338,10 +340,13 @@ async function handleImageUpload(input) {
   zone.style.borderColor = 'var(--primary)';
 
   try {
-    const origKB = (file.size / 1024).toFixed(0);
-    status.textContent = `壓縮中... (原始 ${origKB}KB)`;
-    const dataUrl = await compressToBase64(file, 150);
-    productImages.push(dataUrl);
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const origKB = (file.size / 1024).toFixed(0);
+      status.textContent = `壓縮中... (${i + 1}/${files.length}，原始 ${origKB}KB)`;
+      const dataUrl = await compressToBase64(file, 150);
+      productImages.push(dataUrl);
+    }
     renderImagesPreview();
     input.value = '';
   } catch(e) {
@@ -472,8 +477,9 @@ function renderTable() {
   tbody.innerHTML = filtered.length ? filtered.map(p => {
     const imgSrc = safeImgSrc(p.imageUrl);
     const hasVariants = p.variants && p.variants.length > 0;
+    const variantTotalStock = hasVariants ? p.variants.reduce((s, v) => s + (Number(v.stock) || 0), 0) : 0;
     const stockBadge = hasVariants
-      ? `<span class="badge badge-info">${p.variants.length} 種樣式</span>`
+      ? `<span class="badge ${variantTotalStock<=0?'badge-danger':variantTotalStock<10?'badge-warn':'badge-info'}">${variantTotalStock<=0?'售完':variantTotalStock} <span style="font-weight:400;font-size:.75em">/ ${p.variants.length}樣式</span></span>`
       : `<span class="badge ${(p.stock??999)<=0?'badge-danger':(p.stock??999)<10?'badge-warn':'badge-success'}">${(p.stock??999)<=0?'售完':escapeHtml(String(p.stock??'∞'))}</span>`;
     const imgCount = (p.images && p.images.length > 1) ? `<span style="font-size:.7rem;color:var(--muted);margin-left:.3rem">(${p.images.length}張)</span>` : '';
     return `
@@ -487,9 +493,18 @@ function renderTable() {
         </div>
       </td>
       <td>${escapeHtml(p.category || '—')}</td>
-      <td>${p.salePrice
-          ? `<span style="color:var(--danger);font-weight:700">${formatPrice(p.salePrice)}</span> <span style="text-decoration:line-through;color:var(--muted);font-size:.8rem">${formatPrice(p.price)}</span>`
-          : hasVariants ? `<span style="font-size:.82rem;color:var(--muted)">見各樣式</span>` : formatPrice(p.price)}</td>
+      <td>${(() => {
+          if (hasVariants) {
+            const prices = p.variants.map(v => v.salePrice ?? v.price ?? 0).sort((a,b) => a-b);
+            const lo = prices[0], hi = prices[prices.length-1];
+            return lo === hi
+              ? `<span style="font-weight:700">${formatPrice(lo)}</span>`
+              : `<span style="font-weight:700">${formatPrice(lo)}</span> <span style="color:var(--muted);font-size:.82rem">~ ${formatPrice(hi)}</span>`;
+          }
+          return p.salePrice
+            ? `<span style="color:var(--danger);font-weight:700">${formatPrice(p.salePrice)}</span> <span style="text-decoration:line-through;color:var(--muted);font-size:.8rem">${formatPrice(p.price)}</span>`
+            : formatPrice(p.price);
+        })()}</td>
       <td>${stockBadge}</td>
       <td><span class="badge ${p.active?'badge-success':'badge-gray'}">${p.active?'上架中':'已下架'}</span></td>
       <td>

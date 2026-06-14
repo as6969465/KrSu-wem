@@ -31,6 +31,7 @@
     .stat-sub { font-size:.8rem; color:var(--muted); }
     @media(max-width:900px){ .stat-grid{grid-template-columns:repeat(2,1fr);} .sidebar{display:none;} }
   </style>
+  <script src="../js/store-name-init.js"></script>
 </head>
 <body>
 <aside class="sidebar">
@@ -65,6 +66,12 @@
         <option value="completed">已完成</option>
         <option value="cancelled">已取消</option>
       </select>
+      <div style="display:flex;align-items:center;gap:.4rem">
+        <input id="filter-date-from" type="date" class="form-input" style="width:140px" onchange="renderTable()" title="起始日期">
+        <span style="color:var(--muted);font-size:.85rem">～</span>
+        <input id="filter-date-to" type="date" class="form-input" style="width:140px" onchange="renderTable()" title="結束日期">
+        <button class="btn btn-outline btn-sm" onclick="clearDateFilter()">清除</button>
+      </div>
     </div>
   </div>
   <div style="padding:1.5rem">
@@ -112,7 +119,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="../js/firebase-config.js"></script>
+<script src="/__/firebase/init.js"></script>
+  <script src="../js/app-helpers.js"></script>
 <script>
 const STATUS_BADGE = { pending:'badge-warn', processing:'badge-info', shipped:'badge-info', completed:'badge-success', cancelled:'badge-danger' };
 const STATUS_LABEL = { pending:'待處理', processing:'備貨中', shipped:'已出貨', completed:'已完成', cancelled:'已取消' };
@@ -141,12 +149,28 @@ async function loadOrders() {
   }
 }
 
+function clearDateFilter() {
+  document.getElementById('filter-date-from').value = '';
+  document.getElementById('filter-date-to').value = '';
+  renderTable();
+}
+
 function renderTable() {
-  const q = document.getElementById('search').value.toLowerCase();
-  const st = document.getElementById('filter-status').value;
+  const q    = document.getElementById('search').value.toLowerCase();
+  const st   = document.getElementById('filter-status').value;
+  const from = document.getElementById('filter-date-from').value;
+  const to   = document.getElementById('filter-date-to').value;
+  const fromTs = from ? new Date(from).getTime() : null;
+  const toTs   = to   ? new Date(to + 'T23:59:59').getTime() : null;
+
   const filtered = orders.filter(o => {
     if (st && o.status !== st) return false;
     if (q && !o.id.toLowerCase().includes(q) && !(o.receiver?.name||'').toLowerCase().includes(q)) return false;
+    if (fromTs || toTs) {
+      const ts = o.createdAt?.seconds ? o.createdAt.seconds * 1000 : (o.createdAt?.toDate?.()?.getTime?.() ?? 0);
+      if (fromTs && ts < fromTs) return false;
+      if (toTs   && ts > toTs)   return false;
+    }
     return true;
   });
   const tbody = document.getElementById('order-tbody');
@@ -158,7 +182,14 @@ function renderTable() {
         <div style="font-size:.78rem;color:var(--muted)">${escapeHtml(o.receiver?.phone||'')}</div>
       </td>
       <td style="font-size:.85rem">${escapeHtml(o.shipping?.method||'—')}</td>
-      <td style="font-size:.85rem">${escapeHtml(PAY_LABEL[o.payment?.method]||o.payment?.method||'—')}</td>
+      <td style="font-size:.85rem">
+        <div>${escapeHtml(PAY_LABEL[o.payment?.method]||o.payment?.method||'—')}</div>
+        ${o.payment?.method === 'transfer' ? o.payment?.transferCode
+          ? `<div style="font-size:.75rem;color:#065f46;margin-top:.2rem;font-weight:600">✅ 後五碼：${escapeHtml(o.payment.transferCode)}</div>
+             <div style="font-size:.72rem;color:var(--muted)">${formatDate(o.payment.transferAt)}</div>`
+          : `<div style="font-size:.75rem;color:#b45309;margin-top:.2rem">⏳ 待匯款登錄</div>`
+        : ''}
+      </td>
       <td style="font-weight:700">${formatPrice(o.total)}</td>
       <td><span class="badge ${STATUS_BADGE[o.status]||'badge-gray'}">${STATUS_LABEL[o.status]||escapeHtml(o.status)}</span></td>
       <td style="font-size:.78rem;color:var(--muted);white-space:nowrap">${formatDate(o.createdAt)}</td>
@@ -186,6 +217,13 @@ function openOrder(id) {
       <div>
         <div class="form-label">付款方式</div>
         <div>${escapeHtml(PAY_LABEL[o.payment?.method]||o.payment?.method||'—')}</div>
+        ${o.payment?.method === 'transfer' ? `
+          <div style="margin-top:.35rem;font-size:.82rem">
+            ${o.payment?.transferCode
+              ? `<span style="color:#065f46;font-weight:600">✅ 後五碼：${escapeHtml(o.payment.transferCode)}</span>
+                 <span style="color:var(--muted);margin-left:.4rem">${formatDate(o.payment.transferAt)}</span>`
+              : `<span style="color:var(--muted)">⏳ 買家尚未登錄後五碼</span>`}
+          </div>` : ''}
       </div>
       <div>
         <div class="form-label">目前狀態</div>

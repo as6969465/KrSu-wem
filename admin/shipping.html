@@ -31,6 +31,7 @@
     .stat-sub { font-size:.8rem; color:var(--muted); }
     @media(max-width:900px){ .stat-grid{grid-template-columns:repeat(2,1fr);} .sidebar{display:none;} }
   </style>
+  <script src="../js/store-name-init.js"></script>
 </head>
 <body>
 <aside class="sidebar">
@@ -127,7 +128,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="../js/firebase-config.js"></script>
+<script src="/__/firebase/init.js"></script>
+  <script src="../js/app-helpers.js"></script>
 <script>
 let options = [];
 
