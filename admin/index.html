@@ -112,7 +112,7 @@ auth.onAuthStateChanged(async user => {
 
 async function loadDashboard() {
   const [ordersSnap, productsSnap] = await Promise.all([
-    db.collection('orders').orderBy('createdAt','desc').limit(50).get(),
+    db.collection('orders').get(),
     db.collection('products').where('active','==',true).get()
   ]);
 

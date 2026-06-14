@@ -336,8 +336,9 @@ auth.onAuthStateChanged(async user => {
 });
 
 async function loadProducts() {
-  const snap = await db.collection('products').orderBy('createdAt','desc').get();
-  products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const snap = await db.collection('products').get();
+  products = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
   // 分類選項
   const cats = [...new Set(products.map(p=>p.category).filter(Boolean))];
   const sel = document.getElementById('filter-cat');

@@ -109,8 +109,9 @@ auth.onAuthStateChanged(async user => {
 });
 
 async function loadOrders() {
-  const snap = await db.collection('orders').orderBy('createdAt','desc').get();
-  orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const snap = await db.collection('orders').get();
+  orders = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
   renderTable();
 }
 

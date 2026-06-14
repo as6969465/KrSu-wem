@@ -161,8 +161,9 @@ function showTab(tab, btn) {
 }
 
 async function loadOrders() {
-  const snap = await db.collection('orders').where('userId','==',currentUser.uid).orderBy('createdAt','desc').get();
-  allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const snap = await db.collection('orders').where('userId','==',currentUser.uid).get();
+  allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
   renderOrders('');
 }
 
