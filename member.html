@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KrSu-wem — 會員中心</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="shop.html" class="navbar-brand">🛒 KrSu-wem</a>
+    <div class="navbar-links">
+      <a href="shop.html">繼續購物</a>
+      <a href="cart.html">購物車 <span class="cart-badge" id="cart-count">0</span></a>
+      <button onclick="doLogout()">登出</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div style="display:grid;grid-template-columns:240px 1fr;gap:1.5rem;align-items:start">
+    <!-- 側邊欄 -->
+    <div class="card">
+      <div style="text-align:center;padding:.5rem 0 1.25rem">
+        <div style="width:72px;height:72px;border-radius:50%;background:var(--primary);color:#fff;font-size:1.75rem;display:flex;align-items:center;justify-content:center;margin:0 auto .75rem" id="avatar">👤</div>
+        <div id="member-name" style="font-weight:700"></div>
+        <div id="member-email" style="font-size:.8rem;color:var(--muted)"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.25rem">
+        <button class="tab-btn active" onclick="showTab('orders',this)">我的訂單</button>
+        <button class="tab-btn" onclick="showTab('profile',this)">個人資料</button>
+        <button class="tab-btn" onclick="showTab('addresses',this)">收件地址</button>
+      </div>
+    </div>
+
+    <!-- 主內容 -->
+    <div>
+      <!-- 訂單列表 -->
+      <div id="tab-orders">
+        <div class="card">
+          <h2 style="font-weight:700;margin-bottom:1rem">我的訂單</h2>
+          <div class="tabs">
+            <button class="tab-btn active" onclick="filterOrders('',this)">全部</button>
+            <button class="tab-btn" onclick="filterOrders('pending',this)">待處理</button>
+            <button class="tab-btn" onclick="filterOrders('processing',this)">處理中</button>
+            <button class="tab-btn" onclick="filterOrders('shipped',this)">已出貨</button>
+            <button class="tab-btn" onclick="filterOrders('completed',this)">已完成</button>
+          </div>
+          <div id="order-list"><div class="spinner" style="margin:2rem auto;display:block"></div></div>
+        </div>
+      </div>
+
+      <!-- 個人資料 -->
+      <div id="tab-profile" style="display:none">
+        <div class="card">
+          <h2 style="font-weight:700;margin-bottom:1rem">個人資料</h2>
+          <div id="profile-alert"></div>
+          <div class="form-group">
+            <label class="form-label">姓名</label>
+            <input id="p-name" type="text" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">電子信箱</label>
+            <input id="p-email" type="email" class="form-input" disabled style="background:#f8fafc">
+          </div>
+          <div class="form-group">
+            <label class="form-label">手機號碼</label>
+            <input id="p-phone" type="tel" class="form-input">
+          </div>
+          <button class="btn btn-primary" onclick="saveProfile()">儲存變更</button>
+        </div>
+      </div>
+
+      <!-- 收件地址 -->
+      <div id="tab-addresses" style="display:none">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+            <h2 style="font-weight:700">收件地址</h2>
+            <button class="btn btn-primary btn-sm" onclick="openAddrModal()">＋ 新增地址</button>
+          </div>
+          <div id="addr-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 地址 Modal -->
+<div class="modal-overlay" id="addr-modal" style="display:none">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeAddrModal()">✕</button>
+    <h3 class="modal-title">新增收件地址</h3>
+    <div class="form-group">
+      <label class="form-label">地址名稱（如：家、公司）</label>
+      <input id="a-label" type="text" class="form-input" placeholder="家">
+    </div>
+    <div style="display:grid;grid-template-columns:100px 1fr;gap:1rem">
+      <div class="form-group">
+        <label class="form-label">郵遞區號</label>
+        <input id="a-zip" type="text" class="form-input" maxlength="6">
+      </div>
+      <div class="form-group">
+        <label class="form-label">縣市區鄉鎮</label>
+        <input id="a-city" type="text" class="form-input">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">詳細地址</label>
+      <input id="a-detail" type="text" class="form-input">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="saveAddress()">儲存地址</button>
+  </div>
+</div>
+
+<!-- 訂單詳情 Modal -->
+<div class="modal-overlay" id="order-modal" style="display:none">
+  <div class="modal-box" style="max-width:620px">
+    <button class="modal-close" onclick="closeOrderModal()">✕</button>
+    <h3 class="modal-title">訂單詳情</h3>
+    <div id="order-detail-content"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/cart.js"></script>
+<script>
+let currentUser = null;
+let allOrders = [];
+let userAddresses = [];
+
+const STATUS_LABEL = { pending:'待處理', processing:'備貨中', shipped:'已出貨', completed:'已完成', cancelled:'已取消' };
+const STATUS_BADGE = { pending:'badge-warn', processing:'badge-info', shipped:'badge-info', completed:'badge-success', cancelled:'badge-danger' };
+
+auth.onAuthStateChanged(async user => {
+  if (!user) return window.location.href = 'index.html';
+  currentUser = user;
+  loadCartCount();
+  const doc = await db.collection('users').doc(user.uid).get();
+  const data = doc.exists ? doc.data() : {};
+  document.getElementById('member-name').textContent = data.name || user.displayName || '會員';
+  document.getElementById('member-email').textContent = data.email || user.email || '';
+  document.getElementById('avatar').textContent = (data.name || user.displayName || '?')[0].toUpperCase();
+  document.getElementById('p-name').value = data.name || '';
+  document.getElementById('p-email').value = data.email || user.email || '';
+  document.getElementById('p-phone').value = data.phone || '';
+  userAddresses = data.addresses || [];
+  renderAddresses();
+  loadOrders();
+});
+
+function showTab(tab, btn) {
+  ['orders','profile','addresses'].forEach(t => document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+async function loadOrders() {
+  const snap = await db.collection('orders').where('userId','==',currentUser.uid).orderBy('createdAt','desc').get();
+  allOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderOrders('');
+}
+
+function filterOrders(status, btn) {
+  document.querySelectorAll('#tab-orders .tab-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderOrders(status);
+}
+
+function renderOrders(status) {
+  const list = status ? allOrders.filter(o => o.status === status) : allOrders;
+  const el = document.getElementById('order-list');
+  if (!list.length) { el.innerHTML = '<p style="color:var(--muted);text-align:center;padding:2rem">暫無訂單</p>'; return; }
+  el.innerHTML = list.map(o => `
+    <div style="border:1.5px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:.75rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;flex-wrap:wrap;gap:.5rem">
+        <div>
+          <span style="font-size:.8rem;color:var(--muted)">訂單 #${escapeHtml(o.id.slice(0,8).toUpperCase())}</span>
+          <span style="font-size:.8rem;color:var(--muted);margin-left:.5rem">${formatDate(o.createdAt)}</span>
+        </div>
+        <span class="badge ${STATUS_BADGE[o.status]||'badge-gray'}">${STATUS_LABEL[o.status]||escapeHtml(o.status)}</span>
+      </div>
+      <div style="font-size:.9rem;color:var(--muted);margin-bottom:.5rem">
+        ${(o.items||[]).map(i=>`${escapeHtml(i.name)} x${Number(i.qty)}`).join('、')}
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:700;color:var(--primary)">${formatPrice(o.total)}</span>
+        <button class="btn btn-outline btn-sm" data-oid="${escapeHtml(o.id)}" onclick="openOrderModal(this.dataset.oid)">查看明細</button>
+      </div>
+    </div>`).join('');
+}
+
+function openOrderModal(id) {
+  const o = allOrders.find(x => x.id === id);
+  if (!o) return;
+  const PAY_LABEL = { cod:'貨到付款', transfer:'銀行轉帳', credit:'信用卡' };
+  document.getElementById('order-detail-content').innerHTML = `
+    <div style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">
+      訂單編號：${escapeHtml(o.id)} ｜ ${formatDate(o.createdAt)}
+    </div>
+    <div style="margin-bottom:1rem">
+      ${(o.items||[]).map(i=>`
+        <div class="cart-item" style="padding:.5rem 0">
+          <div style="flex:1;font-size:.9rem">${escapeHtml(i.name)} × ${Number(i.qty)}</div>
+          <div style="font-weight:600">${formatPrice(i.price*i.qty)}</div>
+        </div>`).join('')}
+    </div>
+    <div class="summary-box">
+      <div class="summary-row"><span>小計</span><span>${formatPrice(o.subtotal)}</span></div>
+      <div class="summary-row"><span>運費</span><span>${formatPrice(o.shipping?.fee||0)}</span></div>
+      <div class="summary-row total"><span>合計</span><span>${formatPrice(o.total)}</span></div>
+    </div>
+    <div style="margin-top:1rem;font-size:.9rem;color:var(--muted);line-height:1.8">
+      <div>收件人：${escapeHtml(o.receiver?.name||'')} / ${escapeHtml(o.receiver?.phone||'')}</div>
+      <div>取貨：${escapeHtml(o.shipping?.method||'')} — ${escapeHtml(o.shipping?.address||'')}</div>
+      <div>付款：${escapeHtml(PAY_LABEL[o.payment?.method]||o.payment?.method||'')}</div>
+      ${o.note ? `<div>備註：${escapeHtml(o.note)}</div>` : ''}
+    </div>
+    <div style="margin-top:1rem">
+      <span class="badge ${STATUS_BADGE[o.status]||'badge-gray'}" style="font-size:.9rem">${STATUS_LABEL[o.status]||escapeHtml(o.status)}</span>
+    </div>`;
+  document.getElementById('order-modal').style.display = 'flex';
+}
+
+function closeOrderModal() { document.getElementById('order-modal').style.display = 'none'; }
+
+async function saveProfile() {
+  const name = document.getElementById('p-name').value.trim();
+  const phone = document.getElementById('p-phone').value.trim();
+  const alertEl = document.getElementById('profile-alert');
+  if (!name) { alertEl.innerHTML = '<div class="alert alert-error">請填寫姓名</div>'; return; }
+  try {
+    await db.collection('users').doc(currentUser.uid).update({ name, phone });
+    await currentUser.updateProfile({ displayName: name });
+    document.getElementById('member-name').textContent = name;
+    alertEl.innerHTML = '<div class="alert alert-success">資料已更新</div>';
+    setTimeout(() => alertEl.innerHTML = '', 3000);
+  } catch(e) {
+    alertEl.innerHTML = `<div class="alert alert-error">更新失敗：${e.message}</div>`;
+  }
+}
+
+function renderAddresses() {
+  const el = document.getElementById('addr-list');
+  if (!userAddresses.length) { el.innerHTML = '<p style="color:var(--muted)">尚未新增地址</p>'; return; }
+  el.innerHTML = userAddresses.map((a, i) => `
+    <div style="border:1.5px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:.75rem;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-weight:600">${a.label || '地址'}</div>
+        <div style="font-size:.85rem;color:var(--muted)">${a.zip} ${a.city} ${a.detail}</div>
+      </div>
+      <button class="btn btn-sm" onclick="removeAddress(${i})" style="color:var(--danger);background:none;border:none;cursor:pointer">🗑 刪除</button>
+    </div>`).join('');
+}
+
+function openAddrModal() { document.getElementById('addr-modal').style.display = 'flex'; }
+function closeAddrModal() { document.getElementById('addr-modal').style.display = 'none'; }
+
+async function saveAddress() {
+  const addr = {
+    label: document.getElementById('a-label').value.trim() || '地址',
+    zip: document.getElementById('a-zip').value.trim(),
+    city: document.getElementById('a-city').value.trim(),
+    detail: document.getElementById('a-detail').value.trim()
+  };
+  if (!addr.city || !addr.detail) { alert('請填寫完整地址'); return; }
+  userAddresses.push(addr);
+  await db.collection('users').doc(currentUser.uid).update({ addresses: userAddresses });
+  renderAddresses();
+  closeAddrModal();
+}
+
+async function removeAddress(i) {
+  if (!confirm('確定刪除此地址？')) return;
+  userAddresses.splice(i, 1);
+  await db.collection('users').doc(currentUser.uid).update({ addresses: userAddresses });
+  renderAddresses();
+}
+
+function doLogout() {
+  auth.signOut().then(() => window.location.href = 'index.html');
+}
+</script>
+</body>
+</html>

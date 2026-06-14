@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KrSu-wem — 購物車</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="shop.html" class="navbar-brand">🛒 KrSu-wem</a>
+    <div class="navbar-links">
+      <a href="shop.html">繼續購物</a>
+      <a href="member.html">會員中心</a>
+      <button onclick="doLogout()">登出</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <h1 class="page-title">購物車</h1>
+  <div style="display:grid;grid-template-columns:1fr 340px;gap:1.5rem;align-items:start;" id="cart-layout">
+    <!-- 商品清單 -->
+    <div class="card">
+      <div id="cart-items"></div>
+    </div>
+    <!-- 金額摘要 -->
+    <div>
+      <div class="card" id="summary-card">
+        <h3 style="font-weight:700;margin-bottom:1rem">訂單摘要</h3>
+        <div class="summary-box">
+          <div class="summary-row"><span>小計</span><span id="subtotal">NT$ 0</span></div>
+          <div class="summary-row"><span>運費</span><span id="shipping-fee">NT$ 60</span></div>
+          <div class="summary-row"><span>折扣</span><span id="discount-amount" style="color:var(--success)">-NT$ 0</span></div>
+          <div class="summary-row total"><span>合計</span><span id="total-price">NT$ 0</span></div>
+        </div>
+        <div class="form-group" style="margin-top:1rem">
+          <label class="form-label">優惠碼</label>
+          <div style="display:flex;gap:.5rem">
+            <input id="coupon-input" type="text" class="form-input" placeholder="輸入優惠碼">
+            <button class="btn btn-outline" onclick="applyCoupon()">套用</button>
+          </div>
+          <span id="coupon-msg" class="form-hint"></span>
+        </div>
+        <button class="btn btn-primary btn-full" id="btn-checkout" onclick="goCheckout()">前往結帳</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/cart.js"></script>
+<script>
+let appliedDiscount = 0;
+const SHIPPING = 60;
+
+auth.onAuthStateChanged(user => {
+  if (!user) return window.location.href = 'index.html';
+  renderCart();
+});
+
+function renderCart() {
+  const cart = getCart();
+  const container = document.getElementById('cart-items');
+  if (!cart.length) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:3rem;color:var(--muted)">
+        <div style="font-size:3rem;margin-bottom:1rem">🛒</div>
+        <p style="margin-bottom:1rem">購物車是空的</p>
+        <a href="shop.html" class="btn btn-primary">去逛逛</a>
+      </div>`;
+    document.getElementById('summary-card').style.display = 'none';
+    return;
+  }
+  container.innerHTML = cart.map(item => `
+    <div class="cart-item">
+      <div class="cart-item-img">
+        ${item.imageUrl ? `<img src="${item.imageUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:8px">` : '📦'}
+      </div>
+      <div style="flex:1">
+        <div class="cart-item-name">${item.name}</div>
+        <div class="cart-item-price">${formatPrice(item.price)} / 件</div>
+      </div>
+      <div class="qty-control">
+        <button class="qty-btn" onclick="changeQty('${item.id}', ${item.qty - 1})">－</button>
+        <input class="qty-input" type="number" value="${item.qty}" min="1" max="${item.stock}"
+          onchange="changeQty('${item.id}', parseInt(this.value)||1)">
+        <button class="qty-btn" onclick="changeQty('${item.id}', ${item.qty + 1})">＋</button>
+      </div>
+      <div style="min-width:90px;text-align:right;font-weight:700">${formatPrice(item.price * item.qty)}</div>
+      <button class="btn btn-sm" onclick="removeItem('${item.id}')" style="color:var(--danger);background:none;border:none;cursor:pointer;font-size:1.1rem">🗑</button>
+    </div>
+  `).join('');
+  updateSummary();
+}
+
+function changeQty(id, qty) {
+  updateCartQty(id, qty);
+  renderCart();
+}
+
+function removeItem(id) {
+  removeFromCart(id);
+  renderCart();
+}
+
+function updateSummary() {
+  const subtotal = getCartTotal();
+  const total = subtotal + SHIPPING - appliedDiscount;
+  document.getElementById('subtotal').textContent = formatPrice(subtotal);
+  document.getElementById('shipping-fee').textContent = formatPrice(SHIPPING);
+  document.getElementById('discount-amount').textContent = `-${formatPrice(appliedDiscount)}`;
+  document.getElementById('total-price').textContent = formatPrice(Math.max(0, total));
+}
+
+async function applyCoupon() {
+  const code = document.getElementById('coupon-input').value.trim().toUpperCase();
+  const msg = document.getElementById('coupon-msg');
+  if (!code) return;
+  try {
+    const snap = await db.collection('coupons').doc(code).get();
+    if (!snap.exists) { msg.style.color = 'var(--danger)'; msg.textContent = '優惠碼不存在'; return; }
+    const c = snap.data();
+    if (!c.active) { msg.style.color = 'var(--danger)'; msg.textContent = '此優惠碼已失效'; return; }
+    if (c.minAmount && getCartTotal() < c.minAmount) {
+      msg.style.color = 'var(--danger)';
+      msg.textContent = `消費滿 ${formatPrice(c.minAmount)} 才可使用`;
+      return;
+    }
+    appliedDiscount = c.type === 'percent' ? Math.round(getCartTotal() * c.value / 100) : (c.value || 0);
+    msg.style.color = 'var(--success)';
+    msg.textContent = `優惠碼套用成功，折扣 ${formatPrice(appliedDiscount)}`;
+    sessionStorage.setItem('coupon', JSON.stringify({ code, discount: appliedDiscount }));
+    updateSummary();
+  } catch(e) {
+    msg.style.color = 'var(--danger)'; msg.textContent = '套用失敗：' + e.message;
+  }
+}
+
+function goCheckout() {
+  if (!getCart().length) return;
+  window.location.href = 'checkout.html';
+}
+
+function doLogout() {
+  auth.signOut().then(() => window.location.href = 'index.html');
+}
+</script>
+</body>
+</html>

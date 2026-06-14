@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KrSu-wem — 商品管理</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body{display:flex;min-height:100vh}
+    .sidebar{width:220px;background:#1e293b;color:#fff;flex-shrink:0;display:flex;flex-direction:column}
+    .sidebar-brand{padding:1.25rem 1rem;font-size:1.1rem;font-weight:800;border-bottom:1px solid #334155}
+    .sidebar-nav{display:flex;flex-direction:column;gap:.25rem;padding:.75rem;flex:1}
+    .sidebar-link{display:flex;align-items:center;gap:.6rem;padding:.6rem .75rem;border-radius:8px;color:#94a3b8;font-size:.9rem;font-weight:500;cursor:pointer;border:none;background:none;text-align:left;text-decoration:none;transition:all .2s}
+    .sidebar-link:hover,.sidebar-link.active{background:#334155;color:#fff}
+    .sidebar-footer{padding:1rem;border-top:1px solid #334155}
+    .main{flex:1;overflow-y:auto;background:var(--bg)}
+    .main-header{background:#fff;border-bottom:1px solid var(--border);padding:.85rem 1.5rem;display:flex;justify-content:space-between;align-items:center}
+  </style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-brand">🛒 KrSu-wem<br><span style="font-size:.75rem;font-weight:400;color:#94a3b8">管理後台</span></div>
+  <nav class="sidebar-nav">
+    <a href="index.html" class="sidebar-link">📊 總覽儀表板</a>
+    <a href="products.html" class="sidebar-link active">📦 商品管理</a>
+    <a href="orders.html" class="sidebar-link">📋 訂單管理</a>
+    <a href="promotions.html" class="sidebar-link">🎁 優惠設定</a>
+    <a href="shipping.html" class="sidebar-link">🚚 取貨設定</a>
+    <a href="settings.html" class="sidebar-link">⚙️ 系統設定</a>
+  </nav>
+  <div class="sidebar-footer"><button class="sidebar-link" onclick="doLogout()" style="width:100%">🚪 登出</button></div>
+</aside>
+
+<div class="main">
+  <div class="main-header">
+    <h1 style="font-size:1.1rem;font-weight:700">商品管理</h1>
+    <button class="btn btn-primary btn-sm" onclick="openModal()">＋ 新增商品</button>
+  </div>
+  <div style="padding:1.5rem">
+    <!-- 篩選列 -->
+    <div style="display:flex;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap">
+      <input id="search" type="text" class="form-input" placeholder="搜尋商品名稱..." style="max-width:240px" oninput="renderTable()">
+      <select id="filter-cat" class="form-select" style="width:auto" onchange="renderTable()">
+        <option value="">所有分類</option>
+      </select>
+      <select id="filter-status" class="form-select" style="width:auto" onchange="renderTable()">
+        <option value="">所有狀態</option>
+        <option value="active">上架中</option>
+        <option value="inactive">已下架</option>
+      </select>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>商品名稱</th><th>分類</th><th>售價</th><th>庫存</th><th>狀態</th><th>操作</th></tr></thead>
+          <tbody id="product-tbody"><tr><td colspan="6" style="text-align:center"><div class="spinner"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 新增/編輯 Modal -->
+<div class="modal-overlay" id="product-modal" style="display:none">
+  <div class="modal-box" style="max-width:600px">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h3 class="modal-title" id="modal-title">新增商品</h3>
+    <div id="modal-alert"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">商品名稱 *</label>
+        <input id="p-name" type="text" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label">分類</label>
+        <input id="p-cat" type="text" class="form-input" placeholder="例：服飾、電子、食品" list="cat-list">
+        <datalist id="cat-list"></datalist>
+      </div>
+      <div class="form-group">
+        <label class="form-label">狀態</label>
+        <select id="p-active" class="form-select">
+          <option value="true">上架中</option>
+          <option value="false">下架</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">原價 (NT$) *</label>
+        <input id="p-price" type="number" class="form-input" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">特價 (NT$，留空=不特價)</label>
+        <input id="p-sale" type="number" class="form-input" min="0" placeholder="選填">
+      </div>
+      <div class="form-group">
+        <label class="form-label">庫存數量 *</label>
+        <input id="p-stock" type="number" class="form-input" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">商品圖片 URL（選填）</label>
+        <input id="p-img" type="text" class="form-input" placeholder="https://...">
+      </div>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">商品說明</label>
+        <textarea id="p-desc" class="form-textarea"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:.75rem;margin-top.5rem">
+      <button class="btn btn-outline" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveProduct()" id="btn-save">儲存商品</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script>
+let products = [];
+let editId = null;
+
+auth.onAuthStateChanged(async user => {
+  if (!user) return window.location.href = '../index.html';
+  const doc = await db.collection('admins').doc(user.uid).get();
+  if (!doc.exists) return window.location.href = '../shop.html';
+  loadProducts();
+});
+
+async function loadProducts() {
+  const snap = await db.collection('products').orderBy('createdAt','desc').get();
+  products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  // 分類選項
+  const cats = [...new Set(products.map(p=>p.category).filter(Boolean))];
+  const sel = document.getElementById('filter-cat');
+  const dl = document.getElementById('cat-list');
+  cats.forEach(c => {
+    sel.innerHTML += `<option value="${c}">${c}</option>`;
+    dl.innerHTML += `<option value="${c}">`;
+  });
+  renderTable();
+}
+
+function renderTable() {
+  const q = document.getElementById('search').value.toLowerCase();
+  const cat = document.getElementById('filter-cat').value;
+  const status = document.getElementById('filter-status').value;
+  const filtered = products.filter(p => {
+    if (q && !p.name.toLowerCase().includes(q)) return false;
+    if (cat && p.category !== cat) return false;
+    if (status === 'active' && !p.active) return false;
+    if (status === 'inactive' && p.active) return false;
+    return true;
+  });
+  const tbody = document.getElementById('product-tbody');
+  tbody.innerHTML = filtered.length ? filtered.map(p => {
+    const imgSrc = safeImgSrc(p.imageUrl);
+    return `
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:.6rem">
+          <div style="width:38px;height:38px;border-radius:6px;background:#f1f5f9;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;overflow:hidden">
+            ${imgSrc ? `<img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover">` : '📦'}
+          </div>
+          <span style="font-weight:600">${escapeHtml(p.name)}</span>
+        </div>
+      </td>
+      <td>${escapeHtml(p.category || '—')}</td>
+      <td>
+        ${p.salePrice ? `<span style="color:var(--danger);font-weight:700">${formatPrice(p.salePrice)}</span> <span style="text-decoration:line-through;color:var(--muted);font-size:.8rem">${formatPrice(p.price)}</span>` : formatPrice(p.price)}
+      </td>
+      <td><span class="badge ${(p.stock??999)<=0?'badge-danger':(p.stock??999)<10?'badge-warn':'badge-success'}">${(p.stock??999)<=0?'售完':escapeHtml(String(p.stock??'∞'))}</span></td>
+      <td><span class="badge ${p.active?'badge-success':'badge-gray'}">${p.active?'上架中':'已下架'}</span></td>
+      <td>
+        <button class="btn btn-outline btn-sm" data-pid="${escapeHtml(p.id)}" onclick="editProduct(this.dataset.pid)">編輯</button>
+        <button class="btn btn-sm" data-pid="${escapeHtml(p.id)}" data-active="${!p.active}" onclick="toggleActive(this.dataset.pid, this.dataset.active==='true')" style="margin-left:.4rem;color:${p.active?'var(--danger)':'var(--success)'};border:1.5px solid currentColor;border-radius:8px;padding:.35rem .8rem;font-size:.8rem;font-weight:600;background:none;cursor:pointer">
+          ${p.active?'下架':'上架'}
+        </button>
+      </td>
+    </tr>`;}).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--muted)">找不到商品</td></tr>';
+}
+
+function openModal(id) {
+  editId = null;
+  document.getElementById('modal-title').textContent = '新增商品';
+  ['p-name','p-cat','p-price','p-sale','p-stock','p-img','p-desc'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('p-active').value = 'true';
+  document.getElementById('modal-alert').innerHTML = '';
+  document.getElementById('product-modal').style.display = 'flex';
+}
+
+function editProduct(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  editId = id;
+  document.getElementById('modal-title').textContent = '編輯商品';
+  document.getElementById('p-name').value = p.name || '';
+  document.getElementById('p-cat').value = p.category || '';
+  document.getElementById('p-price').value = p.price || '';
+  document.getElementById('p-sale').value = p.salePrice || '';
+  document.getElementById('p-stock').value = p.stock ?? '';
+  document.getElementById('p-img').value = p.imageUrl || '';
+  document.getElementById('p-desc').value = p.description || '';
+  document.getElementById('p-active').value = p.active ? 'true' : 'false';
+  document.getElementById('modal-alert').innerHTML = '';
+  document.getElementById('product-modal').style.display = 'flex';
+}
+
+function closeModal() { document.getElementById('product-modal').style.display = 'none'; }
+
+async function saveProduct() {
+  const name = document.getElementById('p-name').value.trim();
+  const price = parseFloat(document.getElementById('p-price').value);
+  const stock = parseInt(document.getElementById('p-stock').value);
+  const alertEl = document.getElementById('modal-alert');
+  if (!name) { alertEl.innerHTML = '<div class="alert alert-error">請填寫商品名稱</div>'; return; }
+  if (isNaN(price)) { alertEl.innerHTML = '<div class="alert alert-error">請填寫原價</div>'; return; }
+  if (isNaN(stock)) { alertEl.innerHTML = '<div class="alert alert-error">請填寫庫存數量</div>'; return; }
+  const saleVal = document.getElementById('p-sale').value;
+  const data = {
+    name,
+    category: document.getElementById('p-cat').value.trim(),
+    price,
+    salePrice: saleVal ? parseFloat(saleVal) : null,
+    stock,
+    imageUrl: document.getElementById('p-img').value.trim(),
+    description: document.getElementById('p-desc').value.trim(),
+    active: document.getElementById('p-active').value === 'true',
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  const btn = document.getElementById('btn-save');
+  btn.disabled = true; btn.textContent = '儲存中...';
+  try {
+    if (editId) {
+      await db.collection('products').doc(editId).update(data);
+      const idx = products.findIndex(p=>p.id===editId);
+      if (idx>-1) products[idx] = { ...products[idx], ...data };
+    } else {
+      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      const ref = await db.collection('products').add(data);
+      products.unshift({ id: ref.id, ...data });
+    }
+    renderTable();
+    closeModal();
+  } catch(e) {
+    alertEl.innerHTML = `<div class="alert alert-error">儲存失敗：${e.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '儲存商品';
+  }
+}
+
+async function toggleActive(id, active) {
+  await db.collection('products').doc(id).update({ active });
+  const idx = products.findIndex(p=>p.id===id);
+  if (idx>-1) products[idx].active = active;
+  renderTable();
+}
+
+function doLogout() { auth.signOut().then(() => window.location.href = '../index.html'); }
+</script>
+</body>
+</html>

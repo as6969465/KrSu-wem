@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KrSu-wem — 系統設定</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body{display:flex;min-height:100vh}
+    .sidebar{width:220px;background:#1e293b;color:#fff;flex-shrink:0;display:flex;flex-direction:column}
+    .sidebar-brand{padding:1.25rem 1rem;font-size:1.1rem;font-weight:800;border-bottom:1px solid #334155}
+    .sidebar-nav{display:flex;flex-direction:column;gap:.25rem;padding:.75rem;flex:1}
+    .sidebar-link{display:flex;align-items:center;gap:.6rem;padding:.6rem .75rem;border-radius:8px;color:#94a3b8;font-size:.9rem;font-weight:500;cursor:pointer;border:none;background:none;text-align:left;text-decoration:none;transition:all .2s}
+    .sidebar-link:hover,.sidebar-link.active{background:#334155;color:#fff}
+    .sidebar-footer{padding:1rem;border-top:1px solid #334155}
+    .main{flex:1;overflow-y:auto;background:var(--bg)}
+    .main-header{background:#fff;border-bottom:1px solid var(--border);padding:.85rem 1.5rem}
+  </style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-brand">🛒 KrSu-wem<br><span style="font-size:.75rem;font-weight:400;color:#94a3b8">管理後台</span></div>
+  <nav class="sidebar-nav">
+    <a href="index.html" class="sidebar-link">📊 總覽儀表板</a>
+    <a href="products.html" class="sidebar-link">📦 商品管理</a>
+    <a href="orders.html" class="sidebar-link">📋 訂單管理</a>
+    <a href="promotions.html" class="sidebar-link">🎁 優惠設定</a>
+    <a href="shipping.html" class="sidebar-link">🚚 取貨設定</a>
+    <a href="settings.html" class="sidebar-link active">⚙️ 系統設定</a>
+  </nav>
+  <div class="sidebar-footer"><button class="sidebar-link" onclick="doLogout()" style="width:100%">🚪 登出</button></div>
+</aside>
+
+<div class="main">
+  <div class="main-header">
+    <h1 style="font-size:1.1rem;font-weight:700">系統設定</h1>
+  </div>
+  <div style="padding:1.5rem;display:flex;flex-direction:column;gap:1.5rem;max-width:720px">
+
+    <!-- 公告橫幅 -->
+    <div class="card">
+      <h3 style="font-weight:700;margin-bottom:1rem">📢 公告橫幅</h3>
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">顯示於前台購物頁頂部，可設定促銷公告或重要通知。</p>
+      <div id="banner-list" style="margin-bottom:1rem"></div>
+      <div style="display:flex;gap:.75rem">
+        <input id="new-banner" type="text" class="form-input" placeholder="輸入公告文字，例：夏季特賣最低 5 折起！">
+        <button class="btn btn-outline" onclick="addBanner()">新增</button>
+      </div>
+      <div id="banner-alert" style="margin-top:.75rem"></div>
+      <button class="btn btn-primary" style="margin-top:1rem" onclick="saveBanners()">儲存公告</button>
+    </div>
+
+    <!-- 管理員設定 -->
+    <div class="card">
+      <h3 style="font-weight:700;margin-bottom:1rem">👤 管理員帳號</h3>
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">
+        在 Firestore 中，<code style="background:#f1f5f9;padding:.1rem .4rem;border-radius:4px">admins/{uid}</code> 集合內有文件的使用者即為管理員。
+        新增管理員請於 Firebase Console 手動建立文件，或透過以下工具指定 UID。
+      </p>
+      <div style="display:flex;gap:.75rem">
+        <input id="admin-uid" type="text" class="form-input" placeholder="貼上要授權的使用者 UID">
+        <button class="btn btn-outline" onclick="addAdmin()">授權</button>
+      </div>
+      <div id="admin-alert" style="margin-top:.75rem"></div>
+    </div>
+
+    <!-- Firebase 設定說明 -->
+    <div class="card">
+      <h3 style="font-weight:700;margin-bottom:1rem">🔧 Firebase 設定說明</h3>
+      <p style="font-size:.85rem;color:var(--muted);line-height:1.8">
+        1. 前往 <strong>Firebase Console</strong> 建立專案<br>
+        2. 啟用 <strong>Authentication</strong>（Email/Password、Google、Phone）<br>
+        3. 建立 <strong>Firestore Database</strong>（建議使用生產模式，再設定安全規則）<br>
+        4. 將專案設定填入 <code>js/firebase-config.js</code><br>
+        5. 部署至 <strong>Firebase Hosting</strong>：<code>firebase deploy</code>
+      </p>
+      <div style="margin-top:1rem;background:#1e293b;border-radius:10px;padding:1rem;font-family:monospace;font-size:.8rem;color:#94a3b8;line-height:1.8">
+        <span style="color:#64748b">// Firestore 安全規則範例</span><br>
+        rules_version = '2';<br>
+        service cloud.firestore {<br>
+        &nbsp;&nbsp;match /databases/{db}/documents {<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;match /products/{id} { allow read: if true; allow write: if isAdmin(); }<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;match /orders/{id} { allow read, write: if request.auth != null; }<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;match /users/{uid} { allow read, write: if request.auth.uid == uid; }<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;match /coupons/{id} { allow read: if request.auth != null; allow write: if isAdmin(); }<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;function isAdmin() { return exists(/databases/$(db)/documents/admins/$(request.auth.uid)); }<br>
+        &nbsp;&nbsp;}<br>
+        }
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script>
+let banners = [];
+
+auth.onAuthStateChanged(async user => {
+  if (!user) return window.location.href = '../index.html';
+  const doc = await db.collection('admins').doc(user.uid).get();
+  if (!doc.exists) return window.location.href = '../shop.html';
+  loadBanners();
+});
+
+async function loadBanners() {
+  try {
+    const snap = await db.collection('settings').doc('banners').get();
+    banners = snap.exists ? (snap.data().items || []) : [];
+  } catch { banners = []; }
+  renderBanners();
+}
+
+function renderBanners() {
+  const el = document.getElementById('banner-list');
+  el.innerHTML = banners.length ? banners.map((b, i) => `
+    <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem .75rem;background:#f8fafc;border-radius:8px;margin-bottom:.5rem">
+      <span style="flex:1;font-size:.9rem">📢 ${escapeHtml(b.text)}</span>
+      <button data-idx="${i}" onclick="removeBanner(parseInt(this.dataset.idx))" style="background:none;border:none;cursor:pointer;color:var(--danger);font-size:1rem">✕</button>
+    </div>`).join('') : '<p style="font-size:.85rem;color:var(--muted)">目前無公告</p>';
+}
+
+function addBanner() {
+  const text = document.getElementById('new-banner').value.trim();
+  if (!text) return;
+  banners.push({ text });
+  document.getElementById('new-banner').value = '';
+  renderBanners();
+}
+
+function removeBanner(i) {
+  banners.splice(i, 1);
+  renderBanners();
+}
+
+async function saveBanners() {
+  const alertEl = document.getElementById('banner-alert');
+  try {
+    await db.collection('settings').doc('banners').set({ items: banners, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    alertEl.innerHTML = '<div class="alert alert-success">公告已儲存</div>';
+    setTimeout(() => alertEl.innerHTML = '', 3000);
+  } catch(e) {
+    alertEl.innerHTML = `<div class="alert alert-error">儲存失敗：${e.message}</div>`;
+  }
+}
+
+async function addAdmin() {
+  const uid = document.getElementById('admin-uid').value.trim();
+  const alertEl = document.getElementById('admin-alert');
+  if (!uid) { alertEl.innerHTML = '<div class="alert alert-error">請輸入 UID</div>'; return; }
+  try {
+    await db.collection('admins').doc(uid).set({ grantedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    alertEl.innerHTML = '<div class="alert alert-success">管理員授權成功</div>';
+    document.getElementById('admin-uid').value = '';
+    setTimeout(() => alertEl.innerHTML = '', 3000);
+  } catch(e) {
+    alertEl.innerHTML = `<div class="alert alert-error">授權失敗：${e.message}</div>`;
+  }
+}
+
+function doLogout() { auth.signOut().then(() => window.location.href = '../index.html'); }
+</script>
+</body>
+</html>

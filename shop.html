@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KrSu-wem — 購物</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="navbar-inner">
+    <a href="shop.html" class="navbar-brand">🛒 KrSu-wem</a>
+    <input id="search-input" type="text" class="form-input" placeholder="搜尋商品..." style="max-width:260px;margin:0 auto;" oninput="filterProducts()">
+    <div class="navbar-links">
+      <a href="shop.html">首頁</a>
+      <a href="cart.html">購物車 <span class="cart-badge" id="cart-count">0</span></a>
+      <a href="member.html" class="hide-mobile">會員中心</a>
+      <button onclick="doLogout()">登出</button>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <!-- 公告橫幅 -->
+  <div id="banner-area"></div>
+
+  <!-- 分類篩選 -->
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.5rem;" id="category-bar">
+    <button class="btn btn-primary btn-sm" onclick="setCategory('')" data-cat="">全部商品</button>
+  </div>
+
+  <!-- 排序 -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+    <span id="product-count" style="font-size:.9rem;color:var(--muted)"></span>
+    <select class="form-select" style="width:auto" onchange="sortProducts(this.value)">
+      <option value="">預設排序</option>
+      <option value="price-asc">價格低→高</option>
+      <option value="price-desc">價格高→低</option>
+      <option value="name">名稱 A-Z</option>
+    </select>
+  </div>
+
+  <!-- 商品列表 -->
+  <div class="product-grid" id="product-grid">
+    <div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">
+      <div class="spinner" style="margin:auto"></div>
+      <p style="margin-top:1rem">載入商品中...</p>
+    </div>
+  </div>
+</div>
+
+<!-- 商品詳情 Modal -->
+<div class="modal-overlay" id="product-modal" style="display:none">
+  <div class="modal-box" style="max-width:600px">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/cart.js"></script>
+<script>
+let allProducts = [];
+let filteredProducts = [];
+let currentCategory = '';
+
+auth.onAuthStateChanged(user => {
+  if (!user) return window.location.href = 'index.html';
+  loadCartCount();
+  loadBanners();
+  loadProducts();
+});
+
+async function loadBanners() {
+  try {
+    const snap = await db.collection('settings').doc('banners').get();
+    const banners = snap.exists ? (snap.data().items || []) : [];
+    const area = document.getElementById('banner-area');
+    if (banners.length) {
+      area.innerHTML = `<div class="alert alert-info" style="margin-bottom:1rem">${banners.map(b=>b.text).join(' ｜ ')}</div>`;
+    }
+  } catch(e) {}
+}
+
+async function loadProducts() {
+  try {
+    const snap = await db.collection('products').where('active', '==', true).orderBy('createdAt', 'desc').get();
+    allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // 建立分類按鈕
+    const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
+    const bar = document.getElementById('category-bar');
+    cats.forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-outline btn-sm';
+      btn.setAttribute('data-cat', c);
+      btn.textContent = c;
+      btn.onclick = () => setCategory(c);
+      bar.appendChild(btn);
+    });
+
+    filteredProducts = [...allProducts];
+    renderProducts();
+  } catch(e) {
+    document.getElementById('product-grid').innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--muted)">載入失敗：${e.message}</div>`;
+  }
+}
+
+function setCategory(cat) {
+  currentCategory = cat;
+  document.querySelectorAll('[data-cat]').forEach(btn => {
+    btn.className = btn.getAttribute('data-cat') === cat ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
+  });
+  filterProducts();
+}
+
+function filterProducts() {
+  const q = (document.getElementById('search-input').value || '').toLowerCase();
+  filteredProducts = allProducts.filter(p => {
+    const matchCat = !currentCategory || p.category === currentCategory;
+    const matchQ = !q || p.name.toLowerCase().includes(q) || (p.description||'').toLowerCase().includes(q);
+    return matchCat && matchQ;
+  });
+  renderProducts();
+}
+
+function sortProducts(val) {
+  if (val === 'price-asc') filteredProducts.sort((a,b) => getPrice(a) - getPrice(b));
+  else if (val === 'price-desc') filteredProducts.sort((a,b) => getPrice(b) - getPrice(a));
+  else if (val === 'name') filteredProducts.sort((a,b) => a.name.localeCompare(b.name));
+  renderProducts();
+}
+
+function getPrice(p) {
+  return p.salePrice ?? p.price ?? 0;
+}
+
+function renderProducts() {
+  const grid = document.getElementById('product-grid');
+  document.getElementById('product-count').textContent = `共 ${filteredProducts.length} 件商品`;
+  if (!filteredProducts.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">找不到符合的商品</div>`;
+    return;
+  }
+  grid.innerHTML = filteredProducts.map(p => {
+    const price = getPrice(p);
+    const hasSale = p.salePrice && p.salePrice < p.price;
+    const soldOut = (p.stock ?? 999) <= 0;
+    const imgSrc = safeImgSrc(p.imageUrl);
+    return `
+    <div class="product-card" data-id="${escapeHtml(p.id)}" onclick="openProduct(this.dataset.id)">
+      <div class="product-img">${imgSrc ? `<img src="${imgSrc}" alt="${escapeHtml(p.name)}" style="width:100%;height:100%;object-fit:cover">` : '📦'}</div>
+      <div class="product-info">
+        ${p.category ? `<span class="badge badge-info" style="margin-bottom:.4rem">${escapeHtml(p.category)}</span>` : ''}
+        <div class="product-name">${escapeHtml(p.name)}</div>
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:.4rem;margin-top:.4rem">
+          <span class="product-price">${formatPrice(price)}</span>
+          ${hasSale ? `<span class="product-price-original">${formatPrice(p.price)}</span>` : ''}
+          ${soldOut ? `<span class="badge badge-danger">已售完</span>` : ''}
+        </div>
+        <div class="product-stock">${soldOut ? '庫存不足' : `庫存 ${escapeHtml(String(p.stock ?? '充足'))}`}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openProduct(id) {
+  const p = allProducts.find(x => x.id === id);
+  if (!p) return;
+  const price = getPrice(p);
+  const hasSale = p.salePrice && p.salePrice < p.price;
+  const soldOut = (p.stock ?? 999) <= 0;
+  const imgSrc2 = safeImgSrc(p.imageUrl);
+  document.getElementById('modal-content').innerHTML = `
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap">
+      <div style="flex:0 0 200px;max-width:200px">
+        <div class="product-img" style="border-radius:10px;overflow:hidden;height:200px">
+          ${imgSrc2 ? `<img src="${imgSrc2}" alt="${escapeHtml(p.name)}" style="width:100%;height:100%;object-fit:cover">` : '<span style="font-size:4rem">📦</span>'}
+        </div>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:.5rem">${escapeHtml(p.name)}</h2>
+        ${p.category ? `<span class="badge badge-info">${escapeHtml(p.category)}</span>` : ''}
+        <div style="margin:.75rem 0;display:flex;align-items:center;gap:.5rem">
+          <span style="font-size:1.4rem;font-weight:700;color:var(--primary)">${formatPrice(price)}</span>
+          ${hasSale ? `<span style="color:var(--muted);text-decoration:line-through">${formatPrice(p.price)}</span><span class="badge badge-danger">特價</span>` : ''}
+        </div>
+        <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem">${escapeHtml(p.description || '暫無說明')}</p>
+        <div class="form-group">
+          <label class="form-label">數量</label>
+          <div class="qty-control">
+            <button class="qty-btn" onclick="changeQty(-1)">－</button>
+            <input class="qty-input" id="modal-qty" type="number" value="1" min="1" max="${Number(p.stock)||999}">
+            <button class="qty-btn" onclick="changeQty(1)">＋</button>
+          </div>
+        </div>
+        ${soldOut
+          ? `<button class="btn btn-outline btn-full" disabled>已售完</button>`
+          : `<button class="btn btn-primary btn-full" id="btn-add-cart">加入購物車</button>`}
+      </div>
+    </div>`;
+  if (!soldOut) {
+    document.getElementById('btn-add-cart').addEventListener('click', () => addToCartFromModal(id));
+  }
+  document.getElementById('product-modal').style.display = 'flex';
+}
+
+function changeQty(delta) {
+  const input = document.getElementById('modal-qty');
+  const val = Math.max(1, parseInt(input.value||1) + delta);
+  input.value = val;
+}
+
+function addToCartFromModal(id) {
+  const p = allProducts.find(x => x.id === id);
+  const qty = parseInt(document.getElementById('modal-qty').value) || 1;
+  addToCart(p, qty);
+  closeModal();
+  loadCartCount();
+  showToast('已加入購物車 🛒');
+}
+
+function closeModal() {
+  document.getElementById('product-modal').style.display = 'none';
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:2rem;right:2rem;background:#1e293b;color:#fff;padding:.75rem 1.25rem;border-radius:8px;z-index:999;font-size:.9rem;box-shadow:0 4px 16px rgba(0,0,0,.2)';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+function doLogout() {
+  auth.signOut().then(() => window.location.href = 'index.html');
+}
+</script>
+</body>
+</html>

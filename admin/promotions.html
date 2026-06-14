@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KrSu-wem — 優惠設定</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body{display:flex;min-height:100vh}
+    .sidebar{width:220px;background:#1e293b;color:#fff;flex-shrink:0;display:flex;flex-direction:column}
+    .sidebar-brand{padding:1.25rem 1rem;font-size:1.1rem;font-weight:800;border-bottom:1px solid #334155}
+    .sidebar-nav{display:flex;flex-direction:column;gap:.25rem;padding:.75rem;flex:1}
+    .sidebar-link{display:flex;align-items:center;gap:.6rem;padding:.6rem .75rem;border-radius:8px;color:#94a3b8;font-size:.9rem;font-weight:500;cursor:pointer;border:none;background:none;text-align:left;text-decoration:none;transition:all .2s}
+    .sidebar-link:hover,.sidebar-link.active{background:#334155;color:#fff}
+    .sidebar-footer{padding:1rem;border-top:1px solid #334155}
+    .main{flex:1;overflow-y:auto;background:var(--bg)}
+    .main-header{background:#fff;border-bottom:1px solid var(--border);padding:.85rem 1.5rem;display:flex;justify-content:space-between;align-items:center}
+  </style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-brand">🛒 KrSu-wem<br><span style="font-size:.75rem;font-weight:400;color:#94a3b8">管理後台</span></div>
+  <nav class="sidebar-nav">
+    <a href="index.html" class="sidebar-link">📊 總覽儀表板</a>
+    <a href="products.html" class="sidebar-link">📦 商品管理</a>
+    <a href="orders.html" class="sidebar-link">📋 訂單管理</a>
+    <a href="promotions.html" class="sidebar-link active">🎁 優惠設定</a>
+    <a href="shipping.html" class="sidebar-link">🚚 取貨設定</a>
+    <a href="settings.html" class="sidebar-link">⚙️ 系統設定</a>
+  </nav>
+  <div class="sidebar-footer"><button class="sidebar-link" onclick="doLogout()" style="width:100%">🚪 登出</button></div>
+</aside>
+
+<div class="main">
+  <div class="main-header">
+    <h1 style="font-size:1.1rem;font-weight:700">優惠設定</h1>
+    <button class="btn btn-primary btn-sm" onclick="openModal()">＋ 新增優惠碼</button>
+  </div>
+  <div style="padding:1.5rem">
+    <div class="card">
+      <h3 style="font-weight:700;margin-bottom:1rem">優惠碼列表</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>優惠碼</th><th>類型</th><th>折扣</th><th>最低消費</th><th>狀態</th><th>操作</th></tr></thead>
+          <tbody id="coupon-tbody"><tr><td colspan="6" style="text-align:center"><div class="spinner"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 新增優惠碼 Modal -->
+<div class="modal-overlay" id="coupon-modal" style="display:none">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h3 class="modal-title">新增優惠碼</h3>
+    <div id="modal-alert"></div>
+    <div class="form-group">
+      <label class="form-label">優惠碼（大寫英數字）*</label>
+      <input id="c-code" type="text" class="form-input" placeholder="SUMMER2024" style="text-transform:uppercase">
+      <span class="form-hint">消費者結帳時輸入此代碼套用折扣</span>
+    </div>
+    <div class="form-group">
+      <label class="form-label">折扣類型 *</label>
+      <select id="c-type" class="form-select" onchange="toggleType()">
+        <option value="fixed">固定金額折扣（NT$）</option>
+        <option value="percent">百分比折扣（%）</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label" id="c-value-label">折扣金額（NT$）*</label>
+      <input id="c-value" type="number" class="form-input" min="1" placeholder="100">
+    </div>
+    <div class="form-group">
+      <label class="form-label">最低消費金額（NT$，0 = 不限）</label>
+      <input id="c-min" type="number" class="form-input" min="0" placeholder="0" value="0">
+    </div>
+    <div class="form-group">
+      <label class="form-label">狀態</label>
+      <select id="c-active" class="form-select">
+        <option value="true">啟用</option>
+        <option value="false">停用</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:.75rem">
+      <button class="btn btn-outline" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" style="flex:1" onclick="saveCoupon()">儲存優惠碼</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script>
+let coupons = [];
+
+auth.onAuthStateChanged(async user => {
+  if (!user) return window.location.href = '../index.html';
+  const doc = await db.collection('admins').doc(user.uid).get();
+  if (!doc.exists) return window.location.href = '../shop.html';
+  loadCoupons();
+});
+
+async function loadCoupons() {
+  const snap = await db.collection('coupons').get();
+  coupons = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderTable();
+}
+
+function renderTable() {
+  const tbody = document.getElementById('coupon-tbody');
+  tbody.innerHTML = coupons.length ? coupons.map(c => `
+    <tr>
+      <td style="font-family:monospace;font-weight:700;color:var(--primary)">${c.id}</td>
+      <td>${c.type === 'percent' ? '百分比' : '固定金額'}</td>
+      <td style="font-weight:700">${c.type === 'percent' ? c.value + '%' : formatPrice(c.value)}</td>
+      <td>${c.minAmount ? formatPrice(c.minAmount) : '不限'}</td>
+      <td><span class="badge ${c.active ? 'badge-success' : 'badge-gray'}">${c.active ? '啟用' : '停用'}</span></td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="toggleCoupon('${c.id}',${!c.active})">${c.active ? '停用' : '啟用'}</button>
+        <button class="btn btn-danger btn-sm" style="margin-left:.4rem" onclick="deleteCoupon('${c.id}')">刪除</button>
+      </td>
+    </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--muted)">尚未建立優惠碼</td></tr>';
+}
+
+function toggleType() {
+  const t = document.getElementById('c-type').value;
+  document.getElementById('c-value-label').textContent = t === 'percent' ? '折扣百分比（%）*' : '折扣金額（NT$）*';
+}
+
+function openModal() {
+  document.getElementById('modal-alert').innerHTML = '';
+  ['c-code','c-value','c-min'].forEach(id => document.getElementById(id).value = id==='c-min'?'0':'');
+  document.getElementById('c-type').value = 'fixed';
+  document.getElementById('c-active').value = 'true';
+  toggleType();
+  document.getElementById('coupon-modal').style.display = 'flex';
+}
+
+function closeModal() { document.getElementById('coupon-modal').style.display = 'none'; }
+
+async function saveCoupon() {
+  const code = document.getElementById('c-code').value.trim().toUpperCase();
+  const type = document.getElementById('c-type').value;
+  const value = parseFloat(document.getElementById('c-value').value);
+  const min = parseFloat(document.getElementById('c-min').value) || 0;
+  const alertEl = document.getElementById('modal-alert');
+  if (!code || !/^[A-Z0-9]+$/.test(code)) { alertEl.innerHTML = '<div class="alert alert-error">優惠碼只能使用大寫英文和數字</div>'; return; }
+  if (isNaN(value) || value <= 0) { alertEl.innerHTML = '<div class="alert alert-error">請填寫有效的折扣值</div>'; return; }
+  if (type === 'percent' && value > 100) { alertEl.innerHTML = '<div class="alert alert-error">百分比不能超過 100%</div>'; return; }
+  try {
+    await db.collection('coupons').doc(code).set({
+      type, value, minAmount: min,
+      active: document.getElementById('c-active').value === 'true',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await loadCoupons();
+    closeModal();
+  } catch(e) {
+    alertEl.innerHTML = `<div class="alert alert-error">儲存失敗：${e.message}</div>`;
+  }
+}
+
+async function toggleCoupon(id, active) {
+  await db.collection('coupons').doc(id).update({ active });
+  const idx = coupons.findIndex(c=>c.id===id);
+  if (idx>-1) coupons[idx].active = active;
+  renderTable();
+}
+
+async function deleteCoupon(id) {
+  if (!confirm(`確定刪除優惠碼 ${id}？`)) return;
+  await db.collection('coupons').doc(id).delete();
+  coupons = coupons.filter(c=>c.id!==id);
+  renderTable();
+}
+
+function doLogout() { auth.signOut().then(() => window.location.href = '../index.html'); }
+</script>
+</body>
+</html>

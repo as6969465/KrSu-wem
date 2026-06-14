@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KrSu-wem — 後台管理</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { display:flex; min-height:100vh; }
+    .sidebar { width:220px; background:#1e293b; color:#fff; flex-shrink:0; display:flex; flex-direction:column; }
+    .sidebar-brand { padding:1.25rem 1rem; font-size:1.1rem; font-weight:800; border-bottom:1px solid #334155; }
+    .sidebar-nav { display:flex; flex-direction:column; gap:.25rem; padding:.75rem; flex:1; }
+    .sidebar-link { display:flex; align-items:center; gap:.6rem; padding:.6rem .75rem; border-radius:8px; color:#94a3b8; font-size:.9rem; font-weight:500; cursor:pointer; border:none; background:none; text-align:left; text-decoration:none; transition:all .2s; }
+    .sidebar-link:hover, .sidebar-link.active { background:#334155; color:#fff; }
+    .sidebar-footer { padding:1rem; border-top:1px solid #334155; }
+    .main { flex:1; overflow-y:auto; background:var(--bg); }
+    .main-header { background:#fff; border-bottom:1px solid var(--border); padding:.85rem 1.5rem; display:flex; justify-content:space-between; align-items:center; }
+    .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; }
+    .stat-card { background:#fff; border-radius:var(--radius); padding:1.25rem; box-shadow:var(--shadow); }
+    .stat-label { font-size:.8rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
+    .stat-value { font-size:1.75rem; font-weight:800; margin:.4rem 0; }
+    .stat-sub { font-size:.8rem; color:var(--muted); }
+    @media(max-width:900px){ .stat-grid{grid-template-columns:repeat(2,1fr);} .sidebar{display:none;} }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-brand">🛒 KrSu-wem<br><span style="font-size:.75rem;font-weight:400;color:#94a3b8">管理後台</span></div>
+  <nav class="sidebar-nav">
+    <a href="index.html" class="sidebar-link active">📊 總覽儀表板</a>
+    <a href="products.html" class="sidebar-link">📦 商品管理</a>
+    <a href="orders.html" class="sidebar-link">📋 訂單管理</a>
+    <a href="promotions.html" class="sidebar-link">🎁 優惠設定</a>
+    <a href="shipping.html" class="sidebar-link">🚚 取貨設定</a>
+    <a href="settings.html" class="sidebar-link">⚙️ 系統設定</a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="sidebar-link" onclick="doLogout()" style="width:100%">🚪 登出</button>
+  </div>
+</aside>
+
+<div class="main">
+  <div class="main-header">
+    <h1 style="font-size:1.1rem;font-weight:700">總覽儀表板</h1>
+    <span id="admin-name" style="font-size:.85rem;color:var(--muted)"></span>
+  </div>
+  <div style="padding:1.5rem">
+    <!-- 統計卡 -->
+    <div class="stat-grid" style="margin-bottom:1.5rem">
+      <div class="stat-card">
+        <div class="stat-label">今日訂單</div>
+        <div class="stat-value" id="stat-today">—</div>
+        <div class="stat-sub">筆新訂單</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">本月營收</div>
+        <div class="stat-value" id="stat-revenue">—</div>
+        <div class="stat-sub">已完成訂單</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">待處理訂單</div>
+        <div class="stat-value" id="stat-pending" style="color:var(--secondary)">—</div>
+        <div class="stat-sub">需要處理</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">上架商品</div>
+        <div class="stat-value" id="stat-products">—</div>
+        <div class="stat-sub">件商品在售</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 380px;gap:1.5rem">
+      <!-- 最新訂單 -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <h3 style="font-weight:700">最新訂單</h3>
+          <a href="orders.html" class="btn btn-outline btn-sm">查看全部</a>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>訂單編號</th><th>金額</th><th>狀態</th><th>時間</th></tr></thead>
+            <tbody id="recent-orders"><tr><td colspan="4" style="text-align:center"><div class="spinner"></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- 庫存警示 -->
+      <div class="card">
+        <h3 style="font-weight:700;margin-bottom:1rem">⚠️ 低庫存警示</h3>
+        <div id="low-stock-list"><div class="spinner" style="display:block;margin:auto"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="../js/firebase-config.js"></script>
+<script>
+const STATUS_BADGE = { pending:'badge-warn', processing:'badge-info', shipped:'badge-info', completed:'badge-success', cancelled:'badge-danger' };
+const STATUS_LABEL = { pending:'待處理', processing:'備貨中', shipped:'已出貨', completed:'已完成', cancelled:'已取消' };
+
+auth.onAuthStateChanged(async user => {
+  if (!user) return window.location.href = '../index.html';
+  const adminDoc = await db.collection('admins').doc(user.uid).get();
+  if (!adminDoc.exists) return window.location.href = '../shop.html';
+  document.getElementById('admin-name').textContent = user.displayName || user.email;
+  loadDashboard();
+});
+
+async function loadDashboard() {
+  const [ordersSnap, productsSnap] = await Promise.all([
+    db.collection('orders').orderBy('createdAt','desc').limit(50).get(),
+    db.collection('products').where('active','==',true).get()
+  ]);
+
+  const orders = ordersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const products = productsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  // 統計
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayOrders = orders.filter(o => o.createdAt?.toDate() >= today);
+  const pending = orders.filter(o => o.status === 'pending');
+  const revenue = orders.filter(o => o.status === 'completed').reduce((s,o) => s + (o.total||0), 0);
+
+  document.getElementById('stat-today').textContent = todayOrders.length;
+  document.getElementById('stat-revenue').textContent = formatPrice(revenue);
+  document.getElementById('stat-pending').textContent = pending.length;
+  document.getElementById('stat-products').textContent = products.length;
+
+  // 最新訂單
+  const tbody = document.getElementById('recent-orders');
+  const recent = orders.slice(0,8);
+  tbody.innerHTML = recent.length ? recent.map(o => `
+    <tr>
+      <td><a href="orders.html" style="color:var(--primary)">#${o.id.slice(0,8).toUpperCase()}</a></td>
+      <td>${formatPrice(o.total)}</td>
+      <td><span class="badge ${STATUS_BADGE[o.status]||'badge-gray'}">${STATUS_LABEL[o.status]||o.status}</span></td>
+      <td style="white-space:nowrap;font-size:.8rem;color:var(--muted)">${formatDate(o.createdAt)}</td>
+    </tr>`).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--muted)">暫無訂單</td></tr>';
+
+  // 低庫存
+  const lowStock = products.filter(p => (p.stock ?? 999) < 10).sort((a,b) => (a.stock??0)-(b.stock??0));
+  const el = document.getElementById('low-stock-list');
+  el.innerHTML = lowStock.length ? lowStock.map(p => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:.9rem">${p.name}</span>
+      <span class="badge ${p.stock<=0?'badge-danger':'badge-warn'}">${p.stock<=0?'售完':'剩 '+p.stock}</span>
+    </div>`).join('') : '<p style="color:var(--muted);font-size:.9rem">庫存狀況良好 ✅</p>';
+}
+
+function doLogout() {
+  auth.signOut().then(() => window.location.href = '../index.html');
+}
+</script>
+</body>
+</html>
