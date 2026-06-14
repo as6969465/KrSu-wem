@@ -27,7 +27,7 @@
 <body>
 
 <aside class="sidebar">
-  <div class="sidebar-brand">🛒 KrSu-wem<br><span style="font-size:.75rem;font-weight:400;color:#94a3b8">管理後台</span></div>
+  <div class="sidebar-brand">🛒 <span class="store-name-el">KrSu-wem</span><br><span style="font-size:.75rem;font-weight:400;color:#94a3b8">管理後台</span></div>
   <nav class="sidebar-nav">
     <a href="index.html" class="sidebar-link active">📊 總覽儀表板</a>
     <a href="products.html" class="sidebar-link">📦 商品管理</a>
@@ -106,6 +106,7 @@ auth.onAuthStateChanged(async user => {
   if (!user) return window.location.href = '../index.html';
   const adminDoc = await db.collection('admins').doc(user.uid).get();
   if (!adminDoc.exists) return window.location.href = '../shop.html';
+  applyStoreName(' — 管理後台');
   document.getElementById('admin-name').textContent = user.displayName || user.email;
   loadDashboard();
 });

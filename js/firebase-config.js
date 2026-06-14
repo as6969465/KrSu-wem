@@ -41,6 +41,17 @@ function safeImgSrc(url) {
   return /^https:\/\//i.test(url) ? escapeHtml(url) : '';
 }
 
+// 全域 helper：載入並套用賣場名稱（更新所有 .store-name-el 元素與頁面 title）
+let _storeName = '';
+async function applyStoreName(titleSuffix) {
+  try {
+    const snap = await db.collection('settings').doc('general').get();
+    _storeName = (snap.exists && snap.data().storeName) ? snap.data().storeName : 'KrSu-wem';
+  } catch(e) { _storeName = 'KrSu-wem'; }
+  document.querySelectorAll('.store-name-el').forEach(el => { el.textContent = _storeName; });
+  if (titleSuffix) document.title = _storeName + titleSuffix;
+}
+
 // 全域 helper：格式化金額
 function formatPrice(n) {
   return 'NT$ ' + Number(n).toLocaleString('zh-TW');

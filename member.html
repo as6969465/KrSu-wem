@@ -11,7 +11,7 @@
 
 <nav class="navbar">
   <div class="navbar-inner">
-    <a href="shop.html" class="navbar-brand">🛒 KrSu-wem</a>
+    <a href="shop.html" class="navbar-brand">🛒 <span class="store-name-el">KrSu-wem</span></a>
     <div class="navbar-links">
       <a href="shop.html">繼續購物</a>
       <a href="cart.html">購物車 <span class="cart-badge" id="cart-count">0</span></a>
@@ -139,6 +139,7 @@ const STATUS_BADGE = { pending:'badge-warn', processing:'badge-info', shipped:'b
 
 auth.onAuthStateChanged(async user => {
   if (!user) return window.location.href = 'index.html';
+  applyStoreName(' — 會員中心');
   currentUser = user;
   loadCartCount();
   const doc = await db.collection('users').doc(user.uid).get();

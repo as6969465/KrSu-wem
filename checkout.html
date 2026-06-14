@@ -11,7 +11,7 @@
 
 <nav class="navbar">
   <div class="navbar-inner">
-    <a href="shop.html" class="navbar-brand">🛒 KrSu-wem</a>
+    <a href="shop.html" class="navbar-brand">🛒 <span class="store-name-el">KrSu-wem</span></a>
     <div class="navbar-links">
       <a href="cart.html">← 返回購物車</a>
     </div>
@@ -179,6 +179,7 @@ let couponDiscount = 0;
 
 auth.onAuthStateChanged(async user => {
   if (!user) return window.location.href = 'index.html';
+  applyStoreName(' — 結帳');
   currentUser = user;
   if (!getCart().length) return window.location.href = 'cart.html';
   // 預填信箱
