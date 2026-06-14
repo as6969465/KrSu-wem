@@ -54,9 +54,14 @@
       <h3 style="font-weight:700;margin-bottom:1rem">📢 公告橫幅</h3>
       <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">顯示於前台購物頁頂部，可設定促銷公告或重要通知。</p>
       <div id="banner-list" style="margin-bottom:1rem"></div>
-      <div style="display:flex;gap:.75rem">
+      <div style="display:flex;gap:.75rem;margin-bottom:.75rem">
         <input id="new-banner" type="text" class="form-input" placeholder="輸入公告文字，例：夏季特賣最低 5 折起！">
         <button class="btn btn-outline" onclick="addBanner()">新增</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.25rem">
+        <label class="form-label" style="white-space:nowrap;margin:0">切換秒數（多條公告自動輪播）</label>
+        <input id="banner-interval" type="number" class="form-input" min="1" max="60" value="5" style="width:90px">
+        <span style="font-size:.84rem;color:var(--muted)">秒</span>
       </div>
       <div id="banner-alert" style="margin-top:.75rem"></div>
       <button class="btn btn-primary" style="margin-top:1rem" onclick="saveBanners()">儲存公告</button>
@@ -146,6 +151,9 @@ async function loadBanners() {
   try {
     const snap = await db.collection('settings').doc('banners').get();
     banners = snap.exists ? (snap.data().items || []) : [];
+    if (snap.exists && snap.data().rotateInterval) {
+      document.getElementById('banner-interval').value = snap.data().rotateInterval;
+    }
   } catch { banners = []; }
   renderBanners();
 }
@@ -174,8 +182,13 @@ function removeBanner(i) {
 
 async function saveBanners() {
   const alertEl = document.getElementById('banner-alert');
+  const rotateInterval = Math.max(1, parseInt(document.getElementById('banner-interval').value) || 5);
   try {
-    await db.collection('settings').doc('banners').set({ items: banners, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    await db.collection('settings').doc('banners').set({
+      items: banners,
+      rotateInterval,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
     alertEl.innerHTML = '<div class="alert alert-success">公告已儲存</div>';
     setTimeout(() => alertEl.innerHTML = '', 3000);
   } catch(e) {
