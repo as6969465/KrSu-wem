@@ -86,6 +86,7 @@
             <input id="reg-phone" type="tel" class="form-input" placeholder="+886 912 345 678">
             <span class="form-hint">請輸入含國碼的手機號碼，例如 +886912345678</span>
           </div>
+          <div id="reg-recaptcha-container"></div>
         </div>
         <div class="form-group">
           <label class="form-label">姓名</label>
@@ -205,7 +206,10 @@ async function loginWithGoogle() {
 }
 
 function initRecaptcha(containerId) {
-  if (recaptchaVerifier) return;
+  if (recaptchaVerifier) {
+    try { recaptchaVerifier.clear(); } catch(e) {}
+    recaptchaVerifier = null;
+  }
   recaptchaVerifier = new firebase.auth.RecaptchaVerifier(containerId, {
     size: 'normal',
     callback: () => {}
@@ -265,7 +269,7 @@ async function doRegister() {
       await ensureUserDoc(result.user, name);
     } else {
       const phone = document.getElementById('reg-phone').value.trim();
-      initRecaptcha('recaptcha-container');
+      initRecaptcha('reg-recaptcha-container');
       confirmationResult = await auth.signInWithPhoneNumber(phone, recaptchaVerifier);
       document.getElementById('reg-step1').style.display = 'none';
       document.getElementById('reg-step2').style.display = 'block';
@@ -314,6 +318,10 @@ function getErrorMsg(e) {
     'auth/too-many-requests': '操作次數過多，請稍後再試',
     'auth/invalid-phone-number': '手機號碼格式不正確',
     'auth/invalid-verification-code': '驗證碼錯誤',
+    'auth/popup-closed-by-user': '視窗已關閉，請重新操作',
+    'auth/cancelled-popup-request': '操作已取消，請重試',
+    'auth/missing-phone-number': '請輸入手機號碼',
+    'auth/quota-exceeded': '簡訊發送次數已達上限，請稍後再試',
   };
   return map[e.code] || e.message;
 }
