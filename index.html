@@ -142,10 +142,13 @@ let recaptchaVerifier = null;
 auth.onAuthStateChanged(user => {
   applyStoreName(' — 登入');
   if (user) {
-    // 檢查是否為管理員
-    db.collection('admins').doc(user.uid).get().then(doc => {
-      window.location.href = doc.exists ? 'admin/index.html' : 'shop.html';
-    });
+    db.collection('admins').doc(user.uid).get()
+      .then(doc => {
+        window.location.href = doc.exists ? 'admin/index.html' : 'shop.html';
+      })
+      .catch(() => {
+        window.location.href = 'shop.html';
+      });
   }
 });
 
