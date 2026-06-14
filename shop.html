@@ -99,8 +99,9 @@ async function loadBanners() {
 
 async function loadProducts() {
   try {
-    const snap = await db.collection('products').where('active', '==', true).orderBy('createdAt', 'desc').get();
-    allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const snap = await db.collection('products').where('active', '==', true).get();
+    allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
 
     // 建立分類按鈕
     const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
@@ -117,7 +118,8 @@ async function loadProducts() {
     filteredProducts = [...allProducts];
     renderProducts();
   } catch(e) {
-    document.getElementById('product-grid').innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--muted)">載入失敗：${e.message}</div>`;
+    console.error('loadProducts error:', e);
+    document.getElementById('product-grid').innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--muted)">載入失敗：${escapeHtml(e.message)}</div>`;
   }
 }
 
