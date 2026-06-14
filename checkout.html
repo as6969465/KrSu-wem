@@ -6,17 +6,28 @@
   <title>KrSu-wem — 結帳</title>
   <link rel="stylesheet" href="css/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Noto+Sans+TC:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+.s-header{background:#fff;border-bottom:1px solid #e8e8e8;position:sticky;top:0;z-index:200}
+.s-header-inner{max-width:1280px;margin:auto;padding:.75rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.s-logo{font-size:1.3rem;font-weight:800;color:#1a1a1a;letter-spacing:-.02em}
+.s-nav{display:flex;align-items:center;gap:1.25rem}
+.s-nav a,.s-nav button{font-size:.88rem;color:#666;background:none;border:none;cursor:pointer;padding:.3rem .4rem;border-radius:6px;transition:color .15s;white-space:nowrap;text-decoration:none}
+.s-nav a:hover,.s-nav button:hover{color:#1a1a1a}
+.s-cart-count{background:#e53e3e;color:#fff;font-size:.65rem;font-weight:700;border-radius:99px;padding:1px 5px;min-width:16px;text-align:center;display:inline-block}
+.s-btn-login{background:#1a1a1a!important;color:#fff!important;border-radius:99px!important;padding:.3rem .9rem!important;font-weight:600!important}
+  </style>
+  <style>body{visibility:hidden}</style>
 </head>
 <body>
 
-<nav class="navbar">
-  <div class="navbar-inner">
-    <a href="shop.html" class="navbar-brand">🛒 <span class="store-name-el">KrSu-wem</span></a>
-    <div class="navbar-links">
+<header class="s-header">
+  <div class="s-header-inner">
+    <a href="shop.html" class="s-logo">🛒 <span class="store-name-el">KrSu-wem</span></a>
+    <nav class="s-nav">
       <a href="cart.html">← 返回購物車</a>
-    </div>
+    </nav>
   </div>
-</nav>
+</header>
 
 <div class="container" style="max-width:800px">
   <h1 class="page-title">結帳</h1>
@@ -178,6 +189,7 @@ const SHIPPING_FEE = 60;
 let couponDiscount = 0;
 
 auth.onAuthStateChanged(async user => {
+  document.body.style.visibility = 'visible';
   if (!user) return window.location.href = 'index.html';
   applyStoreName(' — 結帳');
   currentUser = user;

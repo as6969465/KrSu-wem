@@ -17,7 +17,7 @@
       --radius: 8px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+    body { font-family: 'Inter', 'Noto Sans TC', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; visibility: hidden; }
     a { text-decoration: none; color: inherit; }
     img { display: block; max-width: 100%; }
 
@@ -361,6 +361,7 @@ let pageSize = 24;
 
 // ── Auth 狀態 ─────────────────────────────────────────────
 auth.onAuthStateChanged(user => {
+  document.body.style.visibility = 'visible';
   if (user) {
     document.getElementById('nav-member').style.display = 'flex';
     document.getElementById('nav-logout').style.display = '';
