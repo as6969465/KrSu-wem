@@ -16,8 +16,9 @@
     <div class="navbar-links">
       <a href="shop.html">首頁</a>
       <a href="cart.html">購物車 <span class="cart-badge" id="cart-count">0</span></a>
-      <a href="member.html" class="hide-mobile">會員中心</a>
-      <button onclick="doLogout()">登出</button>
+      <a href="member.html" class="hide-mobile" id="nav-member" style="display:none">會員中心</a>
+      <button onclick="doLogout()" id="nav-logout" style="display:none">登出</button>
+      <a href="index.html" id="nav-login" class="btn btn-primary btn-sm">登入 / 註冊</a>
     </div>
   </div>
 </nav>
@@ -71,7 +72,15 @@ let filteredProducts = [];
 let currentCategory = '';
 
 auth.onAuthStateChanged(user => {
-  if (!user) return window.location.href = 'index.html';
+  if (user) {
+    document.getElementById('nav-member').style.display = '';
+    document.getElementById('nav-logout').style.display = '';
+    document.getElementById('nav-login').style.display = 'none';
+  } else {
+    document.getElementById('nav-member').style.display = 'none';
+    document.getElementById('nav-logout').style.display = 'none';
+    document.getElementById('nav-login').style.display = '';
+  }
   loadCartCount();
   loadBanners();
   loadProducts();
