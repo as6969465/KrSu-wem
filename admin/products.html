@@ -24,12 +24,20 @@
     .sidebar-footer .sidebar-link.danger:hover { color:#ff3b30; background:rgba(255,59,48,.06); }
     .main { flex:1; overflow-y:auto; background:var(--bg); min-width:0; }
     .main-header { background:rgba(255,255,255,.88); backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px); border-bottom:1px solid rgba(210,210,215,.6); padding:.85rem 1.5rem; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:100; }
-    .stat-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; }
-    .stat-card { background:#fff; border-radius:var(--radius); padding:1.25rem; box-shadow:var(--shadow); }
-    .stat-label { font-size:.8rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
-    .stat-value { font-size:1.75rem; font-weight:800; margin:.4rem 0; }
-    .stat-sub { font-size:.8rem; color:var(--muted); }
-    @media(max-width:900px){ .stat-grid{grid-template-columns:repeat(2,1fr);} .sidebar{display:none;} }
+    @media(max-width:900px){ .sidebar{display:none;} }
+
+    .img-thumb-wrap { position:relative; width:72px; height:72px; border-radius:8px; overflow:hidden; border:1.5px solid var(--border); background:#f5f5f7; flex-shrink:0; }
+    .img-thumb-wrap img { width:100%; height:100%; object-fit:cover; }
+    .img-thumb-del { position:absolute; top:2px; right:2px; width:18px; height:18px; border-radius:50%; background:rgba(0,0,0,.55); color:#fff; border:none; cursor:pointer; font-size:.7rem; display:flex; align-items:center; justify-content:center; }
+    .img-thumb-primary { position:absolute; bottom:2px; left:2px; font-size:.58rem; background:rgba(0,102,204,.85); color:#fff; border-radius:4px; padding:1px 4px; font-weight:700; }
+
+    .variant-row { display:grid; grid-template-columns:1.4fr 80px 80px 70px 44px auto; gap:.45rem; align-items:center; background:#f8fafc; border:1px solid var(--border); border-radius:10px; padding:.55rem .7rem; }
+    .variant-row .form-input { padding:.45rem .6rem; font-size:.83rem; }
+    .variant-row .col-label { font-size:.72rem; color:var(--muted); text-align:center; }
+    .variant-img-btn { width:40px; height:40px; border-radius:8px; border:1.5px dashed var(--border); background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.1rem; overflow:hidden; flex-shrink:0; transition:border-color .15s; }
+    .variant-img-btn:hover { border-color:var(--accent); }
+    .variant-img-btn img { width:100%; height:100%; object-fit:cover; }
+    .variant-headers { display:grid; grid-template-columns:1.4fr 80px 80px 70px 44px auto; gap:.45rem; padding:0 .7rem; margin-bottom:.2rem; }
   </style>
 </head>
 <body>
@@ -61,7 +69,6 @@
     </div>
   </div>
   <div style="padding:1.5rem">
-    <!-- 篩選列 -->
     <div style="display:flex;gap:.75rem;margin-bottom:1rem;flex-wrap:wrap">
       <input id="search" type="text" class="form-input" placeholder="搜尋商品名稱..." style="max-width:240px" oninput="renderTable()">
       <select id="filter-cat" class="form-select" style="width:auto" onchange="renderTable()">
@@ -86,20 +93,19 @@
 
 <!-- 新增/編輯 Modal -->
 <div class="modal-overlay" id="product-modal" style="display:none">
-  <div class="modal-box" style="max-width:600px">
+  <div class="modal-box" style="max-width:720px">
     <button class="modal-close" onclick="closeModal()">✕</button>
     <h3 class="modal-title" id="modal-title">新增商品</h3>
     <div id="modal-alert"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+
       <div class="form-group" style="grid-column:1/-1">
         <label class="form-label">商品名稱 *</label>
         <input id="p-name" type="text" class="form-input">
       </div>
       <div class="form-group">
         <label class="form-label">分類</label>
-        <select id="p-cat" class="form-select">
-          <option value="">— 請選擇分類 —</option>
-        </select>
+        <select id="p-cat" class="form-select"><option value="">— 請選擇分類 —</option></select>
       </div>
       <div class="form-group">
         <label class="form-label">狀態</label>
@@ -116,39 +122,63 @@
         <label class="form-label">特價 (NT$，留空=不特價)</label>
         <input id="p-sale" type="number" class="form-input" min="0" placeholder="選填">
       </div>
-      <div class="form-group">
-        <label class="form-label">庫存數量 *</label>
+      <div class="form-group" style="grid-column:1/-1">
+        <label class="form-label">庫存數量 <span style="font-weight:400;color:var(--muted);font-size:.8rem">（有樣式時，以各樣式庫存為準）</span></label>
         <input id="p-stock" type="number" class="form-input" min="0">
       </div>
+
+      <!-- 商品圖片（多張）-->
       <div class="form-group" style="grid-column:1/-1">
-        <label class="form-label">商品圖片</label>
-        <!-- 上傳區 -->
+        <label class="form-label">商品圖片（可上傳多張）</label>
+        <div id="images-preview-area" style="display:flex;flex-wrap:wrap;gap:.6rem;margin-bottom:.75rem"></div>
         <div id="upload-zone" onclick="document.getElementById('p-img-file').click()"
-          style="border:2px dashed var(--border);border-radius:10px;padding:1.25rem;text-align:center;cursor:pointer;transition:border-color .2s;background:#fafafa;position:relative">
+          style="border:2px dashed var(--border);border-radius:10px;padding:1rem;text-align:center;cursor:pointer;transition:border-color .2s;background:#fafafa">
           <div id="upload-placeholder">
-            <div style="font-size:2rem;margin-bottom:.4rem">🖼️</div>
-            <div style="font-size:.9rem;color:var(--muted)">點擊上傳圖片，自動壓縮至 300KB 以內</div>
-            <div style="font-size:.78rem;color:#94a3b8;margin-top:.25rem">支援 JPG、PNG、WebP</div>
+            <div style="font-size:1.5rem;margin-bottom:.3rem">🖼️</div>
+            <div style="font-size:.85rem;color:var(--muted)">點擊上傳圖片（可多次新增），自動壓縮至 150KB</div>
+            <div style="font-size:.75rem;color:#94a3b8;margin-top:.2rem">支援 JPG、PNG、WebP</div>
           </div>
-          <img id="img-preview" style="display:none;max-height:160px;margin:auto;border-radius:8px;object-fit:contain">
-          <div id="upload-progress" style="display:none;margin-top:.5rem">
+          <div id="upload-progress" style="display:none;padding:.5rem 0">
             <div class="spinner" style="margin:auto"></div>
             <div id="upload-status" style="font-size:.82rem;color:var(--muted);margin-top:.5rem">壓縮中...</div>
           </div>
         </div>
         <input id="p-img-file" type="file" accept="image/*" style="display:none" onchange="handleImageUpload(this)">
         <div style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem">
-          <span style="font-size:.8rem;color:var(--muted)">或貼上圖片網址：</span>
-          <input id="p-img" type="text" class="form-input" placeholder="https://..." style="flex:1;font-size:.85rem" oninput="previewUrl(this.value)">
+          <span style="font-size:.8rem;color:var(--muted)">或貼上網址：</span>
+          <input id="p-img-url" type="text" class="form-input" placeholder="https://..." style="flex:1;font-size:.85rem">
+          <button type="button" class="btn btn-outline btn-sm" onclick="addImageFromUrl()">加入</button>
         </div>
-        <div id="img-size-info" style="font-size:.78rem;color:var(--success);margin-top:.3rem;display:none"></div>
       </div>
+
+      <!-- 商品說明 -->
       <div class="form-group" style="grid-column:1/-1">
         <label class="form-label">商品說明</label>
         <textarea id="p-desc" class="form-textarea"></textarea>
       </div>
+
+      <!-- 商品樣式 -->
+      <div class="form-group" style="grid-column:1/-1">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+          <label class="form-label" style="margin:0">商品樣式（選填）</label>
+          <button type="button" class="btn btn-outline btn-sm" onclick="addVariant()">＋ 新增樣式</button>
+        </div>
+        <div style="font-size:.78rem;color:var(--muted);margin-bottom:.6rem">各樣式可設定獨立名稱、圖片、庫存與售價</div>
+        <div id="variants-header" style="display:none" class="variant-headers">
+          <span class="col-label" style="text-align:left;font-size:.72rem;color:var(--muted);font-weight:600">名稱</span>
+          <span class="col-label">原價</span>
+          <span class="col-label">特價</span>
+          <span class="col-label">庫存</span>
+          <span class="col-label">圖片</span>
+          <span></span>
+        </div>
+        <div id="variants-list" style="display:flex;flex-direction:column;gap:.45rem">
+          <p id="variants-empty" style="font-size:.85rem;color:var(--muted);padding:.3rem 0">尚未新增樣式。若商品有不同規格（如顏色/尺寸），可按上方按鈕新增。</p>
+        </div>
+      </div>
+
     </div>
-    <div style="display:flex;gap:.75rem;margin-top.5rem">
+    <div style="display:flex;gap:.75rem;margin-top:.75rem">
       <button class="btn btn-outline" onclick="closeModal()">取消</button>
       <button class="btn btn-primary" style="flex:1" onclick="saveProduct()" id="btn-save">儲存商品</button>
     </div>
@@ -177,9 +207,11 @@
 <script>
 let products = [];
 let editId = null;
-let categories = []; // 從 Firestore 載入的分類清單
+let categories = [];
+let productImages = [];   // 目前 modal 的圖片陣列（URL 字串）
+let productVariants = []; // 目前 modal 的樣式陣列
 
-// ── 分類：載入 ────────────────────────────────────────────
+// ── 分類 ──────────────────────────────────────────────────
 async function loadCategories() {
   try {
     const snap = await db.collection('settings').doc('categories').get();
@@ -188,16 +220,13 @@ async function loadCategories() {
   refreshCatSelects();
 }
 
-// ── 分類：更新所有下拉選單 ────────────────────────────────
 function refreshCatSelects() {
-  // 商品表單下拉
   const sel = document.getElementById('p-cat');
   const current = sel.value;
   sel.innerHTML = '<option value="">— 請選擇分類 —</option>' +
     categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   if (current) sel.value = current;
 
-  // 篩選下拉
   const filter = document.getElementById('filter-cat');
   const fCurrent = filter.value;
   filter.innerHTML = '<option value="">所有分類</option>' +
@@ -205,19 +234,12 @@ function refreshCatSelects() {
   if (fCurrent) filter.value = fCurrent;
 }
 
-// ── 分類：儲存到 Firestore ────────────────────────────────
 async function saveCategories() {
   await db.collection('settings').doc('categories').set({ items: categories });
 }
 
-// ── 分類 Modal ────────────────────────────────────────────
-function openCatModal() {
-  renderCatList();
-  document.getElementById('cat-modal').style.display = 'flex';
-}
-function closeCatModal() {
-  document.getElementById('cat-modal').style.display = 'none';
-}
+function openCatModal() { renderCatList(); document.getElementById('cat-modal').style.display = 'flex'; }
+function closeCatModal() { document.getElementById('cat-modal').style.display = 'none'; }
 
 function renderCatList() {
   const area = document.getElementById('cat-list-area');
@@ -237,11 +259,7 @@ async function addCategory() {
   const input = document.getElementById('new-cat-input');
   const name = input.value.trim();
   if (!name) return;
-  if (categories.includes(name)) {
-    input.style.borderColor = 'var(--danger)';
-    setTimeout(() => input.style.borderColor = '', 1500);
-    return;
-  }
+  if (categories.includes(name)) { input.style.borderColor = 'var(--danger)'; setTimeout(() => input.style.borderColor = '', 1500); return; }
   categories.push(name);
   input.value = '';
   await saveCategories();
@@ -255,9 +273,8 @@ async function deleteCategory(idx) {
   refreshCatSelects();
   renderCatList();
 }
-let uploadedImageUrl = ''; // 已上傳的圖片 URL
 
-// ── 圖片壓縮 → base64（Canvas API，無需外部套件或 Storage）──
+// ── 圖片壓縮 ──────────────────────────────────────────────
 async function compressToBase64(file, maxKB = 150) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -268,18 +285,14 @@ async function compressToBase64(file, maxKB = 150) {
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let { width, height } = img;
-        // 最大邊長 1000px
         const MAX_DIM = 1000;
         if (width > MAX_DIM || height > MAX_DIM) {
           if (width > height) { height = Math.round(height * MAX_DIM / width); width = MAX_DIM; }
           else { width = Math.round(width * MAX_DIM / height); height = MAX_DIM; }
         }
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = width; canvas.height = height;
         canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-        // 逐步降低品質直到 base64 < maxKB
-        let quality = 0.85;
-        let dataUrl;
+        let quality = 0.85, dataUrl;
         do {
           dataUrl = canvas.toDataURL('image/jpeg', quality);
           quality = Math.max(0.05, quality - 0.1);
@@ -292,61 +305,137 @@ async function compressToBase64(file, maxKB = 150) {
   });
 }
 
-// ── 使用者選擇檔案後觸發 ───────────────────────────────────
+// ── 商品圖片管理（多張）────────────────────────────────────
+function renderImagesPreview() {
+  const area = document.getElementById('images-preview-area');
+  if (!productImages.length) { area.innerHTML = ''; return; }
+  area.innerHTML = productImages.map((_, idx) => `
+    <div class="img-thumb-wrap">
+      <img data-img-idx="${idx}">
+      ${idx === 0 ? '<span class="img-thumb-primary">主圖</span>' : ''}
+      <button class="img-thumb-del" data-del="${idx}" onclick="removeImage(+this.dataset.del)">✕</button>
+    </div>`).join('');
+  area.querySelectorAll('img[data-img-idx]').forEach(img => {
+    img.src = safeImgSrc(productImages[+img.dataset.imgIdx]) || '';
+  });
+}
+
+function removeImage(idx) {
+  productImages.splice(idx, 1);
+  renderImagesPreview();
+}
+
 async function handleImageUpload(input) {
   const file = input.files[0];
   if (!file) return;
   const zone = document.getElementById('upload-zone');
   const progress = document.getElementById('upload-progress');
   const status = document.getElementById('upload-status');
-  const preview = document.getElementById('img-preview');
   const placeholder = document.getElementById('upload-placeholder');
-  const sizeInfo = document.getElementById('img-size-info');
 
   placeholder.style.display = 'none';
   progress.style.display = 'block';
-  preview.style.display = 'none';
-  sizeInfo.style.display = 'none';
   zone.style.borderColor = 'var(--primary)';
 
   try {
     const origKB = (file.size / 1024).toFixed(0);
     status.textContent = `壓縮中... (原始 ${origKB}KB)`;
     const dataUrl = await compressToBase64(file, 150);
-    const finalKB = (dataUrl.length * 0.75 / 1024).toFixed(0);
-
-    uploadedImageUrl = dataUrl;
-    document.getElementById('p-img').value = ''; // base64 不顯示在 URL 欄
-    preview.src = dataUrl;
-    preview.style.display = 'block';
-    progress.style.display = 'none';
-    sizeInfo.textContent = `✅ 壓縮完成：${origKB}KB → ${finalKB}KB`;
-    sizeInfo.style.display = 'block';
-    zone.style.borderColor = 'var(--success)';
+    productImages.push(dataUrl);
+    renderImagesPreview();
+    input.value = '';
   } catch(e) {
+    document.getElementById('modal-alert').innerHTML = `<div class="alert alert-error">圖片處理失敗：${escapeHtml(e.message)}</div>`;
+  } finally {
     progress.style.display = 'none';
     placeholder.style.display = 'block';
-    zone.style.borderColor = 'var(--danger)';
-    document.getElementById('modal-alert').innerHTML = `<div class="alert alert-error">圖片處理失敗：${escapeHtml(e.message)}</div>`;
+    zone.style.borderColor = 'var(--border)';
   }
 }
 
-// ── 貼網址時預覽 ────────────────────────────────────────────
-function previewUrl(url) {
-  const preview = document.getElementById('img-preview');
-  const placeholder = document.getElementById('upload-placeholder');
-  if (url && /^https:\/\//i.test(url)) {
-    preview.src = url;
-    preview.style.display = 'block';
-    placeholder.style.display = 'none';
-    uploadedImageUrl = url;
-  } else {
-    preview.style.display = 'none';
-    placeholder.style.display = 'block';
-    uploadedImageUrl = '';
+function addImageFromUrl() {
+  const input = document.getElementById('p-img-url');
+  const url = input.value.trim();
+  if (!url || !/^https?:\/\//i.test(url)) {
+    input.style.borderColor = 'var(--danger)';
+    setTimeout(() => input.style.borderColor = '', 1500);
+    return;
   }
+  productImages.push(url);
+  renderImagesPreview();
+  input.value = '';
 }
 
+// ── 商品樣式管理 ──────────────────────────────────────────
+function renderVariantsList() {
+  const list = document.getElementById('variants-list');
+  const empty = document.getElementById('variants-empty');
+  const header = document.getElementById('variants-header');
+
+  list.querySelectorAll('.variant-row').forEach(r => r.remove());
+
+  if (!productVariants.length) {
+    empty.style.display = '';
+    header.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  header.style.display = 'grid';
+
+  productVariants.forEach((v, idx) => {
+    const row = document.createElement('div');
+    row.className = 'variant-row';
+    row.innerHTML = `
+      <input type="text" class="form-input" placeholder="樣式名稱 *" value="${escapeHtml(v.name)}"
+        data-idx="${idx}" data-field="name" onchange="updateVariantField(+this.dataset.idx,this.dataset.field,this.value)">
+      <input type="number" class="form-input" placeholder="原價 *" value="${v.price!=null?v.price:''}" min="0"
+        data-idx="${idx}" data-field="price" onchange="updateVariantField(+this.dataset.idx,this.dataset.field,+this.value)">
+      <input type="number" class="form-input" placeholder="特價" value="${v.salePrice!=null?v.salePrice:''}" min="0"
+        data-idx="${idx}" data-field="salePrice" onchange="updateVariantField(+this.dataset.idx,this.dataset.field,this.value===''?null:+this.value)">
+      <input type="number" class="form-input" placeholder="庫存 *" value="${v.stock!=null?v.stock:''}" min="0"
+        data-idx="${idx}" data-field="stock" onchange="updateVariantField(+this.dataset.idx,this.dataset.field,+this.value)">
+      <div class="variant-img-btn" data-vidx="${idx}" onclick="document.getElementById('v-img-${idx}').click()" title="設定樣式圖片">
+        ${v.imageUrl ? `<img data-vimg="${idx}">` : '🖼️'}
+      </div>
+      <input id="v-img-${idx}" type="file" accept="image/*" style="display:none" data-vidx="${idx}" onchange="handleVariantImageUpload(this,+this.dataset.vidx)">
+      <button type="button" data-del="${idx}" onclick="removeVariant(+this.dataset.del)"
+        style="color:var(--danger);border:1.5px solid var(--danger);border-radius:8px;padding:.3rem .55rem;font-size:.8rem;background:none;cursor:pointer;font-weight:700;white-space:nowrap">✕</button>`;
+    list.appendChild(row);
+    if (v.imageUrl) {
+      const vimg = row.querySelector(`img[data-vimg="${idx}"]`);
+      if (vimg) vimg.src = safeImgSrc(v.imageUrl) || '';
+    }
+  });
+}
+
+function addVariant() {
+  productVariants.push({ id: 'v_' + Date.now() + '_' + productVariants.length, name: '', price: null, salePrice: null, stock: null, imageUrl: '' });
+  renderVariantsList();
+}
+
+function removeVariant(idx) {
+  productVariants.splice(idx, 1);
+  renderVariantsList();
+}
+
+function updateVariantField(idx, field, value) {
+  if (productVariants[idx] !== undefined) productVariants[idx][field] = value;
+}
+
+async function handleVariantImageUpload(input, idx) {
+  const file = input.files[0];
+  if (!file) return;
+  try {
+    const dataUrl = await compressToBase64(file, 150);
+    productVariants[idx].imageUrl = dataUrl;
+    renderVariantsList();
+  } catch(e) {
+    document.getElementById('modal-alert').innerHTML = `<div class="alert alert-error">樣式圖片處理失敗：${escapeHtml(e.message)}</div>`;
+  }
+  input.value = '';
+}
+
+// ── Auth ──────────────────────────────────────────────────
 auth.onAuthStateChanged(async user => {
   if (!user) return window.location.href = '../index.html';
   const doc = await db.collection('admins').doc(user.uid).get();
@@ -382,21 +471,26 @@ function renderTable() {
   const tbody = document.getElementById('product-tbody');
   tbody.innerHTML = filtered.length ? filtered.map(p => {
     const imgSrc = safeImgSrc(p.imageUrl);
+    const hasVariants = p.variants && p.variants.length > 0;
+    const stockBadge = hasVariants
+      ? `<span class="badge badge-info">${p.variants.length} 種樣式</span>`
+      : `<span class="badge ${(p.stock??999)<=0?'badge-danger':(p.stock??999)<10?'badge-warn':'badge-success'}">${(p.stock??999)<=0?'售完':escapeHtml(String(p.stock??'∞'))}</span>`;
+    const imgCount = (p.images && p.images.length > 1) ? `<span style="font-size:.7rem;color:var(--muted);margin-left:.3rem">(${p.images.length}張)</span>` : '';
     return `
     <tr>
       <td>
         <div style="display:flex;align-items:center;gap:.6rem">
-          <div style="width:38px;height:38px;border-radius:6px;background:#f1f5f9;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;overflow:hidden">
+          <div style="width:38px;height:38px;border-radius:6px;background:#f1f5f9;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:1.1rem">
             ${imgSrc ? `<img src="${imgSrc}" style="width:100%;height:100%;object-fit:cover">` : '📦'}
           </div>
-          <span style="font-weight:600">${escapeHtml(p.name)}</span>
+          <span style="font-weight:600">${escapeHtml(p.name)}</span>${imgCount}
         </div>
       </td>
       <td>${escapeHtml(p.category || '—')}</td>
-      <td>
-        ${p.salePrice ? `<span style="color:var(--danger);font-weight:700">${formatPrice(p.salePrice)}</span> <span style="text-decoration:line-through;color:var(--muted);font-size:.8rem">${formatPrice(p.price)}</span>` : formatPrice(p.price)}
-      </td>
-      <td><span class="badge ${(p.stock??999)<=0?'badge-danger':(p.stock??999)<10?'badge-warn':'badge-success'}">${(p.stock??999)<=0?'售完':escapeHtml(String(p.stock??'∞'))}</span></td>
+      <td>${p.salePrice
+          ? `<span style="color:var(--danger);font-weight:700">${formatPrice(p.salePrice)}</span> <span style="text-decoration:line-through;color:var(--muted);font-size:.8rem">${formatPrice(p.price)}</span>`
+          : hasVariants ? `<span style="font-size:.82rem;color:var(--muted)">見各樣式</span>` : formatPrice(p.price)}</td>
+      <td>${stockBadge}</td>
       <td><span class="badge ${p.active?'badge-success':'badge-gray'}">${p.active?'上架中':'已下架'}</span></td>
       <td>
         <button class="btn btn-outline btn-sm" data-pid="${escapeHtml(p.id)}" onclick="editProduct(this.dataset.pid)">編輯</button>
@@ -404,29 +498,30 @@ function renderTable() {
           ${p.active?'下架':'上架'}
         </button>
       </td>
-    </tr>`;}).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--muted)">找不到商品</td></tr>';
+    </tr>`;
+  }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--muted)">找不到商品</td></tr>';
 }
 
-function resetImageUI() {
-  uploadedImageUrl = '';
-  document.getElementById('p-img').value = '';
+function resetFormUI() {
+  productImages = [];
+  productVariants = [];
+  renderImagesPreview();
+  renderVariantsList();
+  document.getElementById('p-img-url').value = '';
   document.getElementById('p-img-file').value = '';
-  document.getElementById('img-preview').style.display = 'none';
-  document.getElementById('img-preview').src = '';
-  document.getElementById('upload-placeholder').style.display = 'block';
   document.getElementById('upload-progress').style.display = 'none';
-  document.getElementById('img-size-info').style.display = 'none';
+  document.getElementById('upload-placeholder').style.display = 'block';
   document.getElementById('upload-zone').style.borderColor = 'var(--border)';
 }
 
-function openModal(id) {
+function openModal() {
   editId = null;
   document.getElementById('modal-title').textContent = '新增商品';
   ['p-name','p-price','p-sale','p-stock','p-desc'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('p-cat').value = '';
   document.getElementById('p-active').value = 'true';
   document.getElementById('modal-alert').innerHTML = '';
-  resetImageUI();
+  resetFormUI();
   document.getElementById('product-modal').style.display = 'flex';
 }
 
@@ -443,16 +538,14 @@ function editProduct(id) {
   document.getElementById('p-desc').value = p.description || '';
   document.getElementById('p-active').value = p.active ? 'true' : 'false';
   document.getElementById('modal-alert').innerHTML = '';
-  resetImageUI();
-  // 若已有圖片則顯示預覽
-  if (p.imageUrl) {
-    uploadedImageUrl = p.imageUrl;
-    document.getElementById('p-img').value = p.imageUrl;
-    const prev = document.getElementById('img-preview');
-    prev.src = p.imageUrl;
-    prev.style.display = 'block';
-    document.getElementById('upload-placeholder').style.display = 'none';
-  }
+
+  resetFormUI();
+  // Load images (after resetFormUI clears them)
+  productImages = (p.images && p.images.length) ? [...p.images] : (p.imageUrl ? [p.imageUrl] : []);
+  productVariants = p.variants ? p.variants.map(v => ({ ...v })) : [];
+  renderImagesPreview();
+  renderVariantsList();
+
   document.getElementById('product-modal').style.display = 'flex';
 }
 
@@ -461,30 +554,52 @@ function closeModal() { document.getElementById('product-modal').style.display =
 async function saveProduct() {
   const name = document.getElementById('p-name').value.trim();
   const price = parseFloat(document.getElementById('p-price').value);
-  const stock = parseInt(document.getElementById('p-stock').value);
   const alertEl = document.getElementById('modal-alert');
+
   if (!name) { alertEl.innerHTML = '<div class="alert alert-error">請填寫商品名稱</div>'; return; }
   if (isNaN(price)) { alertEl.innerHTML = '<div class="alert alert-error">請填寫原價</div>'; return; }
-  if (isNaN(stock)) { alertEl.innerHTML = '<div class="alert alert-error">請填寫庫存數量</div>'; return; }
+
+  for (let i = 0; i < productVariants.length; i++) {
+    const v = productVariants[i];
+    if (!v.name || !String(v.name).trim()) { alertEl.innerHTML = `<div class="alert alert-error">第 ${i+1} 個樣式請填寫名稱</div>`; return; }
+    if (v.price == null || isNaN(+v.price)) { alertEl.innerHTML = `<div class="alert alert-error">第 ${i+1} 個樣式請填寫原價</div>`; return; }
+    if (v.stock == null || isNaN(+v.stock)) { alertEl.innerHTML = `<div class="alert alert-error">第 ${i+1} 個樣式請填寫庫存</div>`; return; }
+  }
+
   const saleVal = document.getElementById('p-sale').value;
+  const stockVal = document.getElementById('p-stock').value;
+  const stock = stockVal !== '' ? parseInt(stockVal) : 0;
+
+  const variants = productVariants.map((v, i) => ({
+    id: v.id || ('v_' + Date.now() + '_' + i),
+    name: String(v.name).trim(),
+    price: Number(v.price),
+    salePrice: v.salePrice != null && v.salePrice !== '' ? Number(v.salePrice) : null,
+    stock: Number(v.stock),
+    imageUrl: v.imageUrl || ''
+  }));
+
   const data = {
     name,
     category: document.getElementById('p-cat').value.trim(),
     price,
     salePrice: saleVal ? parseFloat(saleVal) : null,
     stock,
-    imageUrl: uploadedImageUrl || document.getElementById('p-img').value.trim(),
+    imageUrl: productImages[0] || '',
+    images: [...productImages],
+    variants,
     description: document.getElementById('p-desc').value.trim(),
     active: document.getElementById('p-active').value === 'true',
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
+
   const btn = document.getElementById('btn-save');
   btn.disabled = true; btn.textContent = '儲存中...';
   try {
     if (editId) {
       await db.collection('products').doc(editId).update(data);
-      const idx = products.findIndex(p=>p.id===editId);
-      if (idx>-1) products[idx] = { ...products[idx], ...data };
+      const idx = products.findIndex(p => p.id === editId);
+      if (idx > -1) products[idx] = { ...products[idx], ...data };
     } else {
       data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
       const ref = await db.collection('products').add(data);
@@ -493,7 +608,7 @@ async function saveProduct() {
     renderTable();
     closeModal();
   } catch(e) {
-    alertEl.innerHTML = `<div class="alert alert-error">儲存失敗：${e.message}</div>`;
+    alertEl.innerHTML = `<div class="alert alert-error">儲存失敗：${escapeHtml(e.message)}</div>`;
   } finally {
     btn.disabled = false; btn.textContent = '儲存商品';
   }
@@ -501,8 +616,8 @@ async function saveProduct() {
 
 async function toggleActive(id, active) {
   await db.collection('products').doc(id).update({ active });
-  const idx = products.findIndex(p=>p.id===id);
-  if (idx>-1) products[idx].active = active;
+  const idx = products.findIndex(p => p.id === id);
+  if (idx > -1) products[idx].active = active;
   renderTable();
 }
 

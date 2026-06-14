@@ -166,6 +166,24 @@
     .btn-cart:hover { opacity: .85; }
     .btn-cart:disabled { background: #c7c7cc; cursor: not-allowed; }
 
+    /* ── Image gallery thumbnails ── */
+    .modal-img-wrap { display:flex; flex-direction:column; width:310px; flex-shrink:0; }
+    .modal-img-main { flex:1; background:#f5f5f7; border-radius:22px 0 0 22px; overflow:hidden; display:flex; align-items:center; justify-content:center; min-height:260px; max-height:400px; }
+    .has-thumbs .modal-img-main { border-radius:22px 0 0 0; }
+    .modal-img-main img { width:100%; height:100%; max-height:400px; object-fit:contain; padding:1.5rem; }
+    .modal-img-thumbs { display:flex; gap:.45rem; padding:.65rem .8rem; background:#f5f5f7; border-radius:0 0 0 22px; flex-wrap:wrap; justify-content:center; min-height:0; }
+    .modal-thumb { width:46px; height:46px; border-radius:7px; border:2px solid transparent; cursor:pointer; object-fit:cover; background:#fff; padding:.25rem; transition:border-color .15s; flex-shrink:0; }
+    .modal-thumb.active { border-color:var(--primary); }
+
+    /* ── Variant pills ── */
+    .variant-section { margin-top:.25rem; }
+    .variant-section-label { font-size:.8rem; font-weight:600; color:var(--muted); margin-bottom:.4rem; }
+    .variant-pills { display:flex; flex-wrap:wrap; gap:.4rem; }
+    .variant-pill { padding:.45rem 1rem; border-radius:980px; border:1.5px solid var(--border); background:#fff; font-size:.83rem; font-weight:500; cursor:pointer; transition:all .15s; font-family:inherit; color:var(--text); }
+    .variant-pill:hover:not(.sold-out) { border-color:#aeaeb2; }
+    .variant-pill.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+    .variant-pill.sold-out { opacity:.4; cursor:not-allowed; text-decoration:line-through; }
+
     /* ── Toast ── */
     .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); background: rgba(29,29,31,.9); backdrop-filter: blur(12px); color: #fff; padding: .65rem 1.5rem; border-radius: 980px; font-size: .85rem; font-weight: 500; z-index: 999; box-shadow: 0 4px 24px rgba(0,0,0,.2); animation: toastIn .25s ease; }
     @keyframes toastIn { from { opacity:0; transform: translate(-50%,12px); } to { opacity:1; transform: translate(-50%,0); } }
@@ -192,6 +210,9 @@
       .modal-overlay { padding: 0; align-items: flex-end; }
       .modal-box { border-radius: 22px 22px 0 0; max-height: 92vh; }
       .modal-body { flex-direction: column; }
+      .modal-img-wrap { width: 100%; }
+      .modal-img-main { border-radius: 0; min-height: 180px; max-height: 220px; }
+      .modal-img-thumbs { border-radius: 0; }
       .modal-img  { width: 100%; height: 220px; border-radius: 0; max-height: 220px; }
       .modal-info { padding: 1.25rem 1.25rem 2rem; }
       .modal-name { font-size: 1.1rem; }
@@ -488,53 +509,151 @@ function goPage(n) {
 }
 
 // ── 商品詳情 Modal ────────────────────────────────────────
+let _modalProductId = null;
+let _modalSelectedVariantId = null;
+
 function openProduct(id) {
   const p = allProducts.find(x => x.id === id);
   if (!p) return;
-  const price   = getPrice(p);
-  const hasSale = p.salePrice && p.salePrice < p.price;
-  const soldOut = (p.stock ?? 999) <= 0;
-  const imgSrc  = safeImgSrc(p.imageUrl);
+  _modalProductId = id;
+  _modalSelectedVariantId = null;
+
+  const hasVariants = p.variants && p.variants.length > 0;
+  const images = (p.images && p.images.length) ? p.images : (p.imageUrl ? [p.imageUrl] : []);
+
+  // Base price/stock (shown when no variant selected or no variants)
+  const basePrice   = p.salePrice ?? p.price ?? 0;
+  const hasSale     = p.salePrice && p.salePrice < p.price;
+  const baseSoldOut = !hasVariants && (p.stock ?? 999) <= 0;
+
+  const priceHtml = hasVariants
+    ? `<span class="modal-price" id="modal-price-display" style="color:var(--muted);font-size:1rem">請選擇樣式</span>`
+    : `<span class="modal-price ${hasSale ? 'has-sale' : ''}" id="modal-price-display">
+         NT$ ${Number(basePrice).toLocaleString()}
+         ${hasSale ? `<span class="modal-price-orig">NT$ ${Number(p.price).toLocaleString()}</span>` : ''}
+       </span>`;
+
+  const stockHtml = hasVariants
+    ? `<div class="modal-stock" id="modal-stock-display"></div>`
+    : `<div class="modal-stock" id="modal-stock-display">${baseSoldOut ? '❌ 已售完' : `庫存：${escapeHtml(String(p.stock ?? '充足'))}`}</div>`;
+
+  const variantHtml = hasVariants ? `
+    <div class="variant-section">
+      <div class="variant-section-label">選擇樣式</div>
+      <div class="variant-pills" id="variant-pills">
+        ${p.variants.map(v => {
+          const vSoldOut = v.stock <= 0;
+          return `<button class="variant-pill${vSoldOut?' sold-out':''}" data-vid="${escapeHtml(v.id)}"
+            onclick="${vSoldOut?'':`selectVariant('${escapeHtml(id)}','${escapeHtml(v.id)}')`}">${escapeHtml(v.name)}${vSoldOut?' (售完)':''}</button>`;
+        }).join('')}
+      </div>
+    </div>` : '';
+
+  const imgWrapHtml = `
+    <div class="modal-img-wrap${images.length > 1 ? ' has-thumbs' : ''}">
+      <div class="modal-img-main">
+        ${images.length
+          ? `<img id="modal-main-img" alt="${escapeHtml(p.name)}">`
+          : `<div class="modal-img-placeholder">🛍️</div>`}
+      </div>
+      ${images.length > 1 ? `
+        <div class="modal-img-thumbs" id="modal-thumbs">
+          ${images.map((_, i) => `<img class="modal-thumb${i===0?' active':''}" data-thumb="${i}" onclick="switchModalImg(${i})">`).join('')}
+        </div>` : ''}
+    </div>`;
 
   document.getElementById('modal-body').innerHTML = `
-    <div class="modal-img">
-      ${p.imageUrl
-        ? `<img id="modal-img-el" alt="${escapeHtml(p.name)}">`
-        : `<div class="modal-img-placeholder">🛍️</div>`}
-    </div>
+    ${imgWrapHtml}
     <div class="modal-info">
       ${p.category ? `<div class="modal-cat">${escapeHtml(p.category)}</div>` : ''}
       <div class="modal-name">${escapeHtml(p.name)}</div>
-      <div>
-        <span class="modal-price ${hasSale ? 'has-sale' : ''}">
-          NT$ ${Number(price).toLocaleString()}
-          ${hasSale ? `<span class="modal-price-orig">NT$ ${Number(p.price).toLocaleString()}</span>` : ''}
-        </span>
-      </div>
+      <div>${priceHtml}</div>
+      ${variantHtml}
       <div class="modal-desc">${escapeHtml(p.description || '暫無商品說明')}</div>
-      <div class="modal-stock">${soldOut ? '❌ 已售完' : `庫存：${escapeHtml(String(p.stock ?? '充足'))}`}</div>
-      <div class="qty-row">
+      ${stockHtml}
+      <div class="qty-row" id="modal-qty-row" ${hasVariants ? 'style="display:none"' : ''}>
         <button class="qty-btn" onclick="changeQty(-1)">－</button>
-        <input class="qty-input" id="modal-qty" type="number" value="1" min="1" max="${Number(p.stock)||999}">
+        <input class="qty-input" id="modal-qty" type="number" value="1" min="1" max="${!hasVariants ? (Number(p.stock)||999) : 999}">
         <button class="qty-btn" onclick="changeQty(1)">＋</button>
       </div>
-      <button class="btn-cart" id="btn-add-cart" ${soldOut ? 'disabled' : ''}>
-        ${soldOut ? '已售完' : '加入購物車'}
+      <button class="btn-cart" id="btn-add-cart" ${baseSoldOut ? 'disabled' : ''} ${hasVariants ? 'disabled' : ''}>
+        ${baseSoldOut ? '已售完' : hasVariants ? '請先選擇樣式' : '加入購物車'}
       </button>
     </div>`;
 
-  // 用 JS 設定圖片 src，避免 base64 在 innerHTML 被截斷
-  if (p.imageUrl) {
-    const modalImg = document.getElementById('modal-img-el');
-    if (modalImg) modalImg.src = p.imageUrl;
+  // Set images via JS to avoid base64 truncation in innerHTML
+  if (images.length) {
+    const mainImg = document.getElementById('modal-main-img');
+    if (mainImg) mainImg.src = safeImgSrc(images[0]) || '';
+    const thumbs = document.querySelectorAll('#modal-thumbs .modal-thumb');
+    thumbs.forEach((t, i) => { t.src = safeImgSrc(images[i]) || ''; });
   }
-  if (!soldOut) {
-    document.getElementById('btn-add-cart').addEventListener('click', () => addToCartFromModal(id));
+
+  if (!baseSoldOut && !hasVariants) {
+    document.getElementById('btn-add-cart').addEventListener('click', () => doAddToCart());
   }
+
   const overlay = document.getElementById('product-modal');
   overlay.style.display = 'flex';
   requestAnimationFrame(() => overlay.classList.add('show'));
   document.body.style.overflow = 'hidden';
+}
+
+// Switch main image via thumbnail click
+function switchModalImg(idx) {
+  const p = allProducts.find(x => x.id === _modalProductId);
+  if (!p) return;
+  const images = (p.images && p.images.length) ? p.images : (p.imageUrl ? [p.imageUrl] : []);
+  const mainImg = document.getElementById('modal-main-img');
+  if (mainImg && images[idx]) mainImg.src = safeImgSrc(images[idx]) || '';
+  document.querySelectorAll('#modal-thumbs .modal-thumb').forEach((t, i) => t.classList.toggle('active', i === idx));
+}
+
+// Select a variant
+function selectVariant(productId, variantId) {
+  const p = allProducts.find(x => x.id === productId);
+  if (!p || !p.variants) return;
+  const v = p.variants.find(x => x.id === variantId);
+  if (!v) return;
+
+  _modalSelectedVariantId = variantId;
+
+  // Update pill active state
+  document.querySelectorAll('.variant-pill').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.vid === variantId);
+  });
+
+  // Update main image if variant has its own image
+  if (v.imageUrl) {
+    const mainImg = document.getElementById('modal-main-img');
+    if (mainImg) mainImg.src = safeImgSrc(v.imageUrl) || '';
+    document.querySelectorAll('#modal-thumbs .modal-thumb').forEach(t => t.classList.remove('active'));
+  }
+
+  // Update price display
+  const hasSale = v.salePrice && v.salePrice < v.price;
+  const priceEl = document.getElementById('modal-price-display');
+  if (priceEl) {
+    priceEl.className = `modal-price${hasSale ? ' has-sale' : ''}`;
+    priceEl.innerHTML = `NT$ ${Number(v.salePrice ?? v.price).toLocaleString()}${hasSale ? `<span class="modal-price-orig">NT$ ${Number(v.price).toLocaleString()}</span>` : ''}`;
+  }
+
+  // Update stock display
+  const stockEl = document.getElementById('modal-stock-display');
+  if (stockEl) stockEl.textContent = v.stock <= 0 ? '❌ 已售完' : `庫存：${v.stock}`;
+
+  // Show qty row and enable cart button
+  const qtyRow = document.getElementById('modal-qty-row');
+  if (qtyRow) qtyRow.style.display = v.stock > 0 ? 'flex' : 'none';
+  const qtyInput = document.getElementById('modal-qty');
+  if (qtyInput) { qtyInput.max = v.stock; qtyInput.value = Math.min(+qtyInput.value || 1, v.stock || 1); }
+
+  const btn = document.getElementById('btn-add-cart');
+  if (btn) {
+    btn.disabled = v.stock <= 0;
+    btn.textContent = v.stock <= 0 ? '已售完' : '加入購物車';
+    btn.onclick = v.stock > 0 ? () => doAddToCart() : null;
+  }
 }
 
 function closeModal() {
@@ -544,7 +663,6 @@ function closeModal() {
   document.body.style.overflow = '';
 }
 
-// 點 overlay 背景關閉
 document.getElementById('product-modal').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
 });
@@ -554,14 +672,35 @@ function changeQty(d) {
   input.value = Math.max(1, parseInt(input.value || 1) + d);
 }
 
-function addToCartFromModal(id) {
-  const p = allProducts.find(x => x.id === id);
+function doAddToCart() {
+  const p = allProducts.find(x => x.id === _modalProductId);
+  if (!p) return;
   const qty = parseInt(document.getElementById('modal-qty').value) || 1;
-  addToCart(p, qty);
+  const hasVariants = p.variants && p.variants.length > 0;
+
+  if (hasVariants) {
+    const v = p.variants.find(x => x.id === _modalSelectedVariantId);
+    if (!v) return;
+    addToCart({
+      id: p.id,
+      variantId: v.id,
+      variantName: v.name,
+      name: p.name,
+      price: v.price,
+      salePrice: v.salePrice,
+      imageUrl: v.imageUrl || p.imageUrl || '',
+      stock: v.stock
+    }, qty);
+  } else {
+    addToCart(p, qty);
+  }
   closeModal();
   loadCartCount();
   showToast('已加入購物車 ✓');
 }
+
+// Keep old name for backward compat
+function addToCartFromModal(id) { doAddToCart(); }
 
 // ── Toast ─────────────────────────────────────────────────
 function showToast(msg) {

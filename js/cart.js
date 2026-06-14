@@ -11,14 +11,18 @@ function saveCart(cart) {
   localStorage.setItem(CART_KEY, JSON.stringify(cart));
 }
 
+// product 可附帶 variantId / variantName / imageUrl
 function addToCart(product, qty = 1) {
   const cart = getCart();
-  const idx = cart.findIndex(i => i.id === product.id);
+  const vid = product.variantId || null;
+  const idx = cart.findIndex(i => i.id === product.id && (i.variantId || null) === vid);
   if (idx > -1) {
     cart[idx].qty += qty;
   } else {
     cart.push({
       id: product.id,
+      variantId: vid,
+      variantName: product.variantName || null,
       name: product.name,
       price: product.salePrice ?? product.price ?? 0,
       imageUrl: product.imageUrl || '',
@@ -29,13 +33,15 @@ function addToCart(product, qty = 1) {
   saveCart(cart);
 }
 
-function removeFromCart(id) {
-  saveCart(getCart().filter(i => i.id !== id));
+function removeFromCart(id, variantId) {
+  const vid = variantId || null;
+  saveCart(getCart().filter(i => !(i.id === id && (i.variantId || null) === vid)));
 }
 
-function updateCartQty(id, qty) {
+function updateCartQty(id, qty, variantId) {
+  const vid = variantId || null;
   const cart = getCart();
-  const idx = cart.findIndex(i => i.id === id);
+  const idx = cart.findIndex(i => i.id === id && (i.variantId || null) === vid);
   if (idx > -1) {
     if (qty <= 0) cart.splice(idx, 1);
     else cart[idx].qty = qty;
