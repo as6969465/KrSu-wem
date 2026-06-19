@@ -169,6 +169,40 @@ tr:hover td { background: #fafafa; }
 .sidebar-link:hover, .sidebar-link.active { background: #2c2c2e; color: #fff; }
 .sidebar-footer { padding: 1rem; border-top: 1px solid #2c2c2e; }
 
+/* ── Admin Mobile Bottom Nav ── */
+.admin-bottom-nav {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 300;
+  background: rgba(255,255,255,.96);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-top: 1px solid rgba(0,0,0,.08);
+  padding: .35rem 0;
+  padding-bottom: max(.35rem, env(safe-area-inset-bottom));
+}
+.admin-bottom-nav-inner { display: flex; justify-content: space-around; align-items: center; }
+.admin-nav-item {
+  display: flex; flex-direction: column; align-items: center; gap: .15rem;
+  padding: .3rem .5rem; border-radius: 10px; color: var(--muted);
+  font-size: .6rem; font-weight: 500; text-decoration: none; min-width: 52px;
+  transition: color .15s; border: none; background: none; cursor: pointer; font-family: inherit;
+}
+.admin-nav-item.active { color: #0066cc; }
+.admin-nav-item svg { width: 22px; height: 22px; }
+.admin-nav-item span { white-space: nowrap; }
+
+@media (max-width: 900px) {
+  .sidebar { display: none !important; }
+  .admin-bottom-nav { display: block; }
+  .main { padding-bottom: 5rem; }
+  .main-header { padding: .7rem 1rem; }
+  .main-header h1 { font-size: 1rem; }
+  .stat-grid { grid-template-columns: repeat(2,1fr) !important; gap: .75rem !important; }
+  .stat-card { padding: 1rem; }
+  .stat-value { font-size: 1.4rem; }
+  .card { padding: 1.1rem; border-radius: var(--radius-sm); }
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .container { padding: 1.25rem 1rem; }
