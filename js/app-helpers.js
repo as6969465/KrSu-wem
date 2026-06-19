@@ -1,6 +1,6 @@
 const auth    = firebase.auth();
 const db      = firebase.firestore();
-const storage = firebase.storage();
+const storage = typeof firebase.storage === 'function' ? firebase.storage() : null;
 
 function getCurrentUser() {
   return new Promise((resolve) => {
