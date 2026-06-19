@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
@@ -18,7 +18,7 @@
       --radius:  18px;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system,'Inter','Noto Sans TC',BlinkMacSystemFont,sans-serif; background: var(--bg); color: var(--text); font-size: 15px; -webkit-font-smoothing: antialiased; visibility: hidden; }
+    body { font-family: -apple-system,'Inter','Noto Sans TC',BlinkMacSystemFont,sans-serif; background: var(--bg); color: var(--text); font-size: 15px; -webkit-font-smoothing: antialiased; }
     a { text-decoration: none; color: inherit; }
     img { display: block; max-width: 100%; }
 
@@ -69,7 +69,7 @@
     .cat-btn.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 700; }
 
     /* ── Container ── */
-    .container { max-width: 1280px; margin: auto; padding: 2rem; }
+    .container { max-width: 1280px; margin: auto; padding: 1rem 2rem 2rem; }
 
     /* ── Banner ── */
     #banner-area { margin-bottom: 1.25rem; }
@@ -199,11 +199,41 @@
       .container { padding: 1.25rem 1rem; }
       .sort-bar { flex-direction: column; align-items: flex-start; gap: .5rem; }
     }
+    @media (hover: none) {
+      .product-card:hover { transform: none; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+      .product-card:hover .product-img-wrap img { transform: none; }
+      .product-card:hover .quick-add { transform: translateY(100%); }
+    }
     @media (max-width: 540px) {
-      .header-top { flex-wrap: wrap; }
-      .header-logo { font-size: 1.15rem; }
-      .header-search { order: 3; flex: 0 0 100%; max-width: 100%; }
-      .header-actions { margin-left: auto; }
+      .header-top {
+        flex-wrap: wrap;
+        flex-direction: column;
+        align-items: center;
+        padding: .55rem 1rem .45rem;
+        gap: .3rem;
+      }
+      .header-logo {
+        order: 1;
+        width: 100%;
+        text-align: center;
+        font-size: 1.15rem;
+        padding: .1rem 0;
+      }
+      .header-actions {
+        order: 2;
+        width: 100%;
+        justify-content: center;
+        gap: 1rem;
+        margin: 0;
+      }
+      .header-actions a span:not(.cart-count),
+      .header-actions button span { display: none; }
+      .header-search {
+        order: 3;
+        flex: 0 0 100%;
+        max-width: 100%;
+        margin-top: .2rem;
+      }
       .btn-login { font-size: .78rem !important; padding: .3rem .8rem !important; }
       .cat-nav-inner { padding: 0 .75rem; }
       .cat-btn { padding: .6rem .75rem; font-size: .8rem; }
@@ -263,7 +293,7 @@
 <!-- Header -->
 <header class="header">
   <div class="header-top">
-    <a href="shop.html" class="header-logo store-name-el" id="store-logo">KrSu-wem</a>
+    <a href="shop.html" class="header-logo store-name-el" id="store-logo"></a>
 
     <div class="header-search">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -271,6 +301,12 @@
     </div>
 
     <div class="header-actions">
+      <a id="social-line-btn" href="#" target="_blank" rel="noopener" style="display:none;opacity:.7;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.7" aria-label="LINE">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color:#06c755"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+      </a>
+      <a id="social-ig-btn" href="#" target="_blank" rel="noopener" style="display:none;opacity:.7;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.7" aria-label="Instagram">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style="color:#e1306c"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+      </a>
       <a href="cart.html">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
         購物車 <span class="cart-count" id="cart-count">0</span>
@@ -307,11 +343,6 @@
         <option value="price-desc">價格：高 → 低</option>
         <option value="name">名稱 A-Z</option>
       </select>
-      <select class="sort-select" onchange="setPageSize(+this.value)">
-        <option value="24">24 件 / 頁</option>
-        <option value="48">48 件 / 頁</option>
-        <option value="96">96 件 / 頁</option>
-      </select>
     </div>
   </div>
 
@@ -347,7 +378,7 @@ let allProducts = [];
 let filteredProducts = [];
 let currentCategory = '';
 let currentPage = 1;
-let pageSize = 24;
+const pageSize = 12;
 
 // ── Auth 狀態 ─────────────────────────────────────────────
 auth.onAuthStateChanged(user => {
@@ -365,10 +396,27 @@ auth.onAuthStateChanged(user => {
     document.getElementById('nav-login').style.display = '';
   }
   loadCartCount();
-  applyStoreName(' — 全部商品');
+  applyStoreName('');
   loadBanners();
   loadProducts();
+  loadSocialLinks();
 });
+
+async function loadSocialLinks() {
+  try {
+    const snap = await db.collection('settings').doc('general').get();
+    if (!snap.exists) return;
+    const s = snap.data().socialLinks || {};
+    if (s.line) {
+      const el = document.getElementById('social-line-btn');
+      el.href = s.line; el.style.display = '';
+    }
+    if (s.instagram) {
+      const el = document.getElementById('social-ig-btn');
+      el.href = s.instagram; el.style.display = '';
+    }
+  } catch(e) {}
+}
 
 
 // ── 公告橫幅 ─────────────────────────────────────────────
@@ -406,25 +454,43 @@ function startBannerRotation(items, intervalSec) {
   }, intervalSec * 1000);
 }
 
+// ── 分類 nav 建立 ────────────────────────────────────────
+function _buildCategoryNav() {
+  const nav = document.getElementById('cat-nav');
+  nav.querySelectorAll('.cat-btn[data-cat]:not([data-cat=""])').forEach(b => b.remove());
+  const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
+  cats.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'cat-btn';
+    btn.dataset.cat = c;
+    btn.textContent = c;
+    btn.onclick = () => setCategory(c);
+    nav.appendChild(btn);
+  });
+}
+
 // ── 載入商品 ─────────────────────────────────────────────
+const PRODUCTS_CACHE_KEY = 'krsu_products_cache';
+const PRODUCTS_CACHE_TTL = 5 * 60 * 1000; // 5 分鐘
+
 async function loadProducts() {
   try {
+    const cached = sessionStorage.getItem(PRODUCTS_CACHE_KEY);
+    if (cached) {
+      const { ts, data } = JSON.parse(cached);
+      if (Date.now() - ts < PRODUCTS_CACHE_TTL) {
+        allProducts = data;
+        _buildCategoryNav();
+        filteredProducts = [...allProducts];
+        renderProducts();
+        return;
+      }
+    }
     const snap = await db.collection('products').where('active', '==', true).get();
     allProducts = snap.docs.map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
-
-    // 建立分類按鈕
-    const cats = [...new Set(allProducts.map(p => p.category).filter(Boolean))];
-    const nav = document.getElementById('cat-nav');
-    cats.forEach(c => {
-      const btn = document.createElement('button');
-      btn.className = 'cat-btn';
-      btn.dataset.cat = c;
-      btn.textContent = c;
-      btn.onclick = () => setCategory(c);
-      nav.appendChild(btn);
-    });
-
+    try { sessionStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data: allProducts })); } catch(e) {}
+    _buildCategoryNav();
     filteredProducts = [...allProducts];
     renderProducts();
   } catch(e) {
@@ -464,7 +530,6 @@ function sortProducts(val) {
   renderProducts();
 }
 
-function setPageSize(n) { pageSize = n; currentPage = 1; renderProducts(); }
 function getPrice(p) {
   if (p.variants && p.variants.length) {
     const prices = p.variants.map(v => v.salePrice ?? v.price ?? 0);

@@ -1,5 +1,6 @@
-const auth = firebase.auth();
-const db   = firebase.firestore();
+const auth    = firebase.auth();
+const db      = firebase.firestore();
+const storage = firebase.storage();
 
 function getCurrentUser() {
   return new Promise((resolve) => {
@@ -35,11 +36,11 @@ let _storeName = localStorage.getItem(STORE_NAME_KEY) || '';
 async function applyStoreName(titleSuffix) {
   try {
     const snap = await db.collection('settings').doc('general').get();
-    const fetched = (snap.exists && snap.data().storeName) ? snap.data().storeName : 'KrSu-wem';
+    const fetched = (snap.exists && snap.data().storeName) ? snap.data().storeName : '';
     if (fetched !== _storeName) { _storeName = fetched; localStorage.setItem(STORE_NAME_KEY, _storeName); }
-  } catch(e) { if (!_storeName) _storeName = 'KrSu-wem'; }
+  } catch(e) { if (!_storeName) _storeName = ''; }
   document.querySelectorAll('.store-name-el').forEach(el => { el.textContent = _storeName; });
-  if (titleSuffix) document.title = _storeName + titleSuffix;
+  if (titleSuffix !== undefined) document.title = _storeName + (titleSuffix || '');
 }
 
 function formatPrice(n) {

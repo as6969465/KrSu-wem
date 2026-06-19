@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
@@ -12,7 +12,7 @@
 <div class="auth-page">
   <div class="auth-box">
     <div class="auth-logo">
-      <h1>🛒 <span class="store-name-el">KrSu-wem</span></h1>
+      <h1>🛒 <span class="store-name-el"></span></h1>
       <p>您的線上購物首選平台</p>
     </div>
 
@@ -43,88 +43,40 @@
         使用 Google 帳號登入
       </button>
 
-      <p style="text-align:center;margin-top:1rem;font-size:.85rem;color:var(--muted)">
-        <a href="#" onclick="showPhoneLogin()" style="color:var(--primary)">使用手機號碼登入</a>
-      </p>
-
       <div class="divider"></div>
-      <p style="text-align:center;font-size:.85rem;color:var(--muted)">
-        賣家後台？ <a href="admin/index.html" style="color:var(--primary);font-weight:600">前往管理後台</a>
-      </p>
+      <div style="display:flex;align-items:center;justify-content:center;gap:1.5rem">
+        <a href="shop.html" style="color:var(--primary);font-weight:600;font-size:.85rem;display:flex;align-items:center;gap:.3rem;line-height:1">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5L3.5 2h17L22 5.5"/><rect x="1" y="5.5" width="22" height="15" rx="1.5"/><path d="M9 20.5v-6h6v6"/></svg>
+          前往賣場
+        </a>
+        <a id="social-line-btn" href="#" target="_blank" rel="noopener" style="display:none;line-height:0;opacity:.75;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.75" aria-label="LINE">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="color:#06c755;display:block"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>
+        </a>
+        <a id="social-ig-btn" href="#" target="_blank" rel="noopener" style="display:none;line-height:0;opacity:.75;transition:opacity .15s" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.75" aria-label="Instagram">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style="color:#e1306c;display:block"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+        </a>
+      </div>
     </div>
 
     <!-- 註冊表單 -->
     <div id="form-register" style="display:none">
-      <div id="reg-step1">
-        <div class="form-group">
-          <label class="form-label">註冊方式</label>
-          <div style="display:flex;gap:.75rem;">
-            <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;font-size:.9rem;">
-              <input type="radio" name="reg-method" value="email" checked onchange="setRegMethod('email')"> 電子信箱
-            </label>
-            <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;font-size:.9rem;">
-              <input type="radio" name="reg-method" value="phone" onchange="setRegMethod('phone')"> 手機號碼
-            </label>
-          </div>
-        </div>
-        <div id="reg-email-fields">
-          <div class="form-group">
-            <label class="form-label">電子信箱</label>
-            <input id="reg-email" type="email" class="form-input" placeholder="example@email.com">
-          </div>
-          <div class="form-group">
-            <label class="form-label">密碼</label>
-            <input id="reg-password" type="password" class="form-input" placeholder="至少 6 個字元">
-          </div>
-          <div class="form-group">
-            <label class="form-label">確認密碼</label>
-            <input id="reg-password2" type="password" class="form-input" placeholder="再次輸入密碼">
-          </div>
-        </div>
-        <div id="reg-phone-fields" style="display:none">
-          <div class="form-group">
-            <label class="form-label">手機號碼</label>
-            <input id="reg-phone" type="tel" class="form-input" placeholder="+886 912 345 678">
-            <span class="form-hint">請輸入含國碼的手機號碼，例如 +886912345678</span>
-          </div>
-          <div id="reg-recaptcha-container"></div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">姓名</label>
-          <input id="reg-name" type="text" class="form-input" placeholder="您的姓名">
-        </div>
-        <button class="btn btn-primary btn-full" onclick="doRegister()" id="btn-register">建立帳號</button>
+      <div class="form-group">
+        <label class="form-label">電子信箱</label>
+        <input id="reg-email" type="email" class="form-input" placeholder="example@email.com">
       </div>
-
-      <!-- 手機驗證碼步驟 -->
-      <div id="reg-step2" style="display:none">
-        <p style="margin-bottom:1rem;font-size:.9rem;color:var(--muted)">驗證碼已傳送至您的手機</p>
-        <div class="form-group">
-          <label class="form-label">驗證碼</label>
-          <input id="reg-otp" type="text" class="form-input" placeholder="輸入 6 位數驗證碼" maxlength="6">
-        </div>
-        <button class="btn btn-primary btn-full" onclick="verifyOTP()">驗證並完成註冊</button>
+      <div class="form-group">
+        <label class="form-label">密碼</label>
+        <input id="reg-password" type="password" class="form-input" placeholder="至少 6 個字元">
       </div>
-    </div>
-
-    <!-- 手機登入 -->
-    <div id="form-phone" style="display:none">
-      <div id="phone-step1">
-        <div class="form-group">
-          <label class="form-label">手機號碼</label>
-          <input id="phone-number" type="tel" class="form-input" placeholder="+886 912 345 678">
-        </div>
-        <div id="recaptcha-container"></div>
-        <button class="btn btn-primary btn-full" onclick="sendPhoneCode()" style="margin-top:.5rem">發送驗證碼</button>
-        <button class="btn btn-outline btn-full" onclick="switchTab('login')" style="margin-top:.5rem">返回</button>
+      <div class="form-group">
+        <label class="form-label">確認密碼</label>
+        <input id="reg-password2" type="password" class="form-input" placeholder="再次輸入密碼">
       </div>
-      <div id="phone-step2" style="display:none">
-        <div class="form-group">
-          <label class="form-label">驗證碼</label>
-          <input id="phone-otp" type="text" class="form-input" placeholder="輸入 6 位數驗證碼" maxlength="6">
-        </div>
-        <button class="btn btn-primary btn-full" onclick="verifyPhoneOTP()">驗證登入</button>
+      <div class="form-group">
+        <label class="form-label">姓名</label>
+        <input id="reg-name" type="text" class="form-input" placeholder="您的姓名">
       </div>
+      <button class="btn btn-primary btn-full" onclick="doRegister()" id="btn-register">建立帳號</button>
     </div>
 
   </div>
@@ -137,54 +89,37 @@
 <script src="/__/firebase/init.js"></script>
   <script src="js/app-helpers.js"></script>
 <script>
-let confirmationResult = null;
-let regMethod = 'email';
-let recaptchaVerifier = null;
+db.collection('settings').doc('general').get().then(snap => {
+  if (!snap.exists) return;
+  const s = snap.data().socialLinks || {};
+  if (s.line) { const el = document.getElementById('social-line-btn'); el.href = s.line; el.style.display = ''; }
+  if (s.instagram) { const el = document.getElementById('social-ig-btn'); el.href = s.instagram; el.style.display = ''; }
+}).catch(() => {});
 
-// 檢查已登入狀態
 auth.onAuthStateChanged(user => {
-  applyStoreName(' — 登入');
+  applyStoreName('');
   if (user) {
     db.collection('admins').doc(user.uid).get()
-      .then(doc => {
-        window.location.href = doc.exists ? 'admin/index.html' : 'shop.html';
-      })
-      .catch(() => {
-        window.location.href = 'shop.html';
-      });
+      .then(doc => { window.location.href = doc.exists ? 'admin/index.html' : 'shop.html'; })
+      .catch(() => { window.location.href = 'shop.html'; });
   }
 });
 
 function switchTab(tab) {
-  document.getElementById('form-login').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('form-login').style.display    = tab === 'login'    ? 'block' : 'none';
   document.getElementById('form-register').style.display = tab === 'register' ? 'block' : 'none';
-  document.getElementById('form-phone').style.display = 'none';
-  document.getElementById('tab-login').className = 'auth-tab' + (tab === 'login' ? ' active' : '');
+  document.getElementById('tab-login').className    = 'auth-tab' + (tab === 'login'    ? ' active' : '');
   document.getElementById('tab-register').className = 'auth-tab' + (tab === 'register' ? ' active' : '');
   clearAlert();
-}
-
-function showPhoneLogin() {
-  document.getElementById('form-login').style.display = 'none';
-  document.getElementById('form-phone').style.display = 'block';
-  initRecaptcha('recaptcha-container');
-}
-
-function setRegMethod(method) {
-  regMethod = method;
-  document.getElementById('reg-email-fields').style.display = method === 'email' ? 'block' : 'none';
-  document.getElementById('reg-phone-fields').style.display = method === 'phone' ? 'block' : 'none';
 }
 
 function showAlert(msg, type = 'error') {
   document.getElementById('alert-box').innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
 }
-function clearAlert() {
-  document.getElementById('alert-box').innerHTML = '';
-}
+function clearAlert() { document.getElementById('alert-box').innerHTML = ''; }
 
 async function loginWithEmail() {
-  const email = document.getElementById('login-email').value.trim();
+  const email    = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
   if (!email || !password) return showAlert('請填寫信箱和密碼');
   const btn = document.getElementById('btn-login');
@@ -198,101 +133,30 @@ async function loginWithEmail() {
 }
 
 async function loginWithGoogle() {
-  const provider = new firebase.auth.GoogleAuthProvider();
   try {
-    const result = await auth.signInWithPopup(provider);
+    const result = await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
     await ensureUserDoc(result.user);
-  } catch (e) {
-    showAlert(getErrorMsg(e));
-  }
-}
-
-function initRecaptcha(containerId) {
-  if (recaptchaVerifier) {
-    try { recaptchaVerifier.clear(); } catch(e) {}
-    recaptchaVerifier = null;
-  }
-  recaptchaVerifier = new firebase.auth.RecaptchaVerifier(containerId, {
-    size: 'normal',
-    callback: () => {}
-  });
-  recaptchaVerifier.render();
-}
-
-async function sendPhoneCode() {
-  const phone = document.getElementById('phone-number').value.trim();
-  if (!phone) return showAlert('請輸入手機號碼');
-  try {
-    confirmationResult = await auth.signInWithPhoneNumber(phone, recaptchaVerifier);
-    document.getElementById('phone-step1').style.display = 'none';
-    document.getElementById('phone-step2').style.display = 'block';
-    showAlert('驗證碼已發送', 'success');
-  } catch (e) {
-    showAlert(getErrorMsg(e));
-  }
-}
-
-async function verifyPhoneOTP() {
-  const code = document.getElementById('phone-otp').value.trim();
-  if (!code) return showAlert('請輸入驗證碼');
-  try {
-    const result = await confirmationResult.confirm(code);
-    await ensureUserDoc(result.user);
-  } catch (e) {
-    showAlert(getErrorMsg(e));
-  }
+  } catch (e) { showAlert(getErrorMsg(e)); }
 }
 
 async function doRegister() {
   const name = document.getElementById('reg-name').value.trim();
-  if (!name) return showAlert('請輸入姓名');
-
-  if (regMethod === 'email') {
-    const email = document.getElementById('reg-email').value.trim();
-    const pw = document.getElementById('reg-password').value;
-    const pw2 = document.getElementById('reg-password2').value;
-    if (!email) return showAlert('請填寫信箱');
-    if (pw.length < 6) return showAlert('密碼至少 6 個字元');
-    if (pw !== pw2) return showAlert('兩次密碼不一致');
-  } else {
-    const phone = document.getElementById('reg-phone').value.trim();
-    if (!phone) return showAlert('請輸入手機號碼');
-  }
-
+  const email = document.getElementById('reg-email').value.trim();
+  const pw    = document.getElementById('reg-password').value;
+  const pw2   = document.getElementById('reg-password2').value;
+  if (!name)           return showAlert('請輸入姓名');
+  if (!email)          return showAlert('請填寫信箱');
+  if (pw.length < 6)   return showAlert('密碼至少 6 個字元');
+  if (pw !== pw2)      return showAlert('兩次密碼不一致');
   const btn = document.getElementById('btn-register');
   btn.disabled = true; btn.textContent = '處理中...';
-
   try {
-    if (regMethod === 'email') {
-      const email = document.getElementById('reg-email').value.trim();
-      const pw = document.getElementById('reg-password').value;
-      const result = await auth.createUserWithEmailAndPassword(email, pw);
-      await result.user.updateProfile({ displayName: name });
-      await ensureUserDoc(result.user, name);
-    } else {
-      const phone = document.getElementById('reg-phone').value.trim();
-      initRecaptcha('reg-recaptcha-container');
-      confirmationResult = await auth.signInWithPhoneNumber(phone, recaptchaVerifier);
-      document.getElementById('reg-step1').style.display = 'none';
-      document.getElementById('reg-step2').style.display = 'block';
-      showAlert('驗證碼已傳送', 'success');
-      btn.disabled = false; btn.textContent = '建立帳號';
-    }
-  } catch (e) {
-    showAlert(getErrorMsg(e));
-    btn.disabled = false; btn.textContent = '建立帳號';
-  }
-}
-
-async function verifyOTP() {
-  const code = document.getElementById('reg-otp').value.trim();
-  if (!code) return showAlert('請輸入驗證碼');
-  try {
-    const result = await confirmationResult.confirm(code);
-    const name = document.getElementById('reg-name').value.trim();
+    const result = await auth.createUserWithEmailAndPassword(email, pw);
+    await result.user.updateProfile({ displayName: name });
     await ensureUserDoc(result.user, name);
   } catch (e) {
     showAlert(getErrorMsg(e));
+    btn.disabled = false; btn.textContent = '建立帳號';
   }
 }
 
@@ -303,7 +167,6 @@ async function ensureUserDoc(user, name) {
     await ref.set({
       name: name || user.displayName || '會員',
       email: user.email || '',
-      phone: user.phoneNumber || '',
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       addresses: []
     });
@@ -312,18 +175,14 @@ async function ensureUserDoc(user, name) {
 
 function getErrorMsg(e) {
   const map = {
-    'auth/user-not-found': '帳號不存在',
-    'auth/wrong-password': '密碼錯誤',
-    'auth/email-already-in-use': '此信箱已被使用',
-    'auth/invalid-email': '信箱格式不正確',
-    'auth/weak-password': '密碼強度不足',
-    'auth/too-many-requests': '操作次數過多，請稍後再試',
-    'auth/invalid-phone-number': '手機號碼格式不正確',
-    'auth/invalid-verification-code': '驗證碼錯誤',
-    'auth/popup-closed-by-user': '視窗已關閉，請重新操作',
+    'auth/user-not-found':        '帳號不存在',
+    'auth/wrong-password':        '密碼錯誤',
+    'auth/email-already-in-use':  '此信箱已被使用',
+    'auth/invalid-email':         '信箱格式不正確',
+    'auth/weak-password':         '密碼強度不足',
+    'auth/too-many-requests':     '操作次數過多，請稍後再試',
+    'auth/popup-closed-by-user':  '視窗已關閉，請重新操作',
     'auth/cancelled-popup-request': '操作已取消，請重試',
-    'auth/missing-phone-number': '請輸入手機號碼',
-    'auth/quota-exceeded': '簡訊發送次數已達上限，請稍後再試',
   };
   return map[e.code] || e.message;
 }

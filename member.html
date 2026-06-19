@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
@@ -37,7 +37,7 @@
 
 <header class="s-header">
   <div class="s-header-inner">
-    <a href="shop.html" class="s-logo store-name-el">KrSu-wem</a>
+    <a href="shop.html" class="s-logo store-name-el"></a>
     <nav class="s-nav">
       <a href="shop.html">繼續購物</a>
       <a href="cart.html">購物車 <span class="s-cart-count" id="cart-count">0</span></a>
@@ -175,7 +175,7 @@ auth.onAuthStateChanged(async user => {
   document.body.style.visibility = 'visible';
   if (!user) return window.location.href = 'index.html';
   setCartUser(user.uid);
-  applyStoreName(' — 會員中心');
+  applyStoreName('');
   currentUser = user;
   loadCartCount();
   const doc = await db.collection('users').doc(user.uid).get();

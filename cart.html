@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
@@ -32,7 +32,7 @@
 
 <header class="s-header">
   <div class="s-header-inner">
-    <a href="shop.html" class="s-logo store-name-el">KrSu-wem</a>
+    <a href="shop.html" class="s-logo store-name-el"></a>
     <nav class="s-nav">
       <a href="shop.html">繼續購物</a>
       <a href="member.html" id="nav-member" style="display:none">👤 <span id="nav-username">會員</span></a>
@@ -92,7 +92,7 @@ auth.onAuthStateChanged(user => {
     document.getElementById('nav-member').style.display = '';
     document.getElementById('nav-logout').style.display = '';
     document.getElementById('nav-login').style.display = 'none';
-    applyStoreName(' — 購物車');
+    applyStoreName('');
     loadCartCount();
     renderCart();
   } else {
