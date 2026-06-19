@@ -142,30 +142,6 @@
       <div id="admin-alert" style="margin-top:.75rem"></div>
     </div>
 
-    <!-- Firebase 設定說明 -->
-    <div class="card">
-      <h3 style="font-weight:700;margin-bottom:1rem">🔧 Firebase 設定說明</h3>
-      <p style="font-size:.85rem;color:var(--muted);line-height:1.8">
-        1. 前往 <strong>Firebase Console</strong> 建立專案<br>
-        2. 啟用 <strong>Authentication</strong>（Email/Password、Google、Phone）<br>
-        3. 建立 <strong>Firestore Database</strong>（建議使用生產模式，再設定安全規則）<br>
-        4. 將專案設定填入 <code>js/firebase-config.js</code><br>
-        5. 部署至 <strong>Firebase Hosting</strong>：<code>firebase deploy</code>
-      </p>
-      <div style="margin-top:1rem;background:#1e293b;border-radius:10px;padding:1rem;font-family:monospace;font-size:.8rem;color:#94a3b8;line-height:1.8">
-        <span style="color:#64748b">// Firestore 安全規則範例</span><br>
-        rules_version = '2';<br>
-        service cloud.firestore {<br>
-        &nbsp;&nbsp;match /databases/{db}/documents {<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;match /products/{id} { allow read: if true; allow write: if isAdmin(); }<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;match /orders/{id} { allow read, write: if request.auth != null; }<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;match /users/{uid} { allow read, write: if request.auth.uid == uid; }<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;match /coupons/{id} { allow read: if request.auth != null; allow write: if isAdmin(); }<br>
-        &nbsp;&nbsp;&nbsp;&nbsp;function isAdmin() { return exists(/databases/$(db)/documents/admins/$(request.auth.uid)); }<br>
-        &nbsp;&nbsp;}<br>
-        }
-      </div>
-    </div>
 
   </div>
 </div>
