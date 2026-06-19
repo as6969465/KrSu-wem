@@ -119,6 +119,15 @@ function showAlert(msg, type = 'error') {
 }
 function clearAlert() { document.getElementById('alert-box').innerHTML = ''; }
 
+async function recordLogin(user) {
+  try {
+    await db.collection('users').doc(user.uid).set({
+      loginCount: firebase.firestore.FieldValue.increment(1),
+      lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+  } catch(e) {}
+}
+
 async function loginWithEmail() {
   const email    = document.getElementById('login-email').value.trim();
   const password = document.getElementById('login-password').value;
@@ -126,7 +135,8 @@ async function loginWithEmail() {
   const btn = document.getElementById('btn-login');
   btn.disabled = true; btn.textContent = '登入中...';
   try {
-    await auth.signInWithEmailAndPassword(email, password);
+    const result = await auth.signInWithEmailAndPassword(email, password);
+    await recordLogin(result.user);
   } catch (e) {
     showAlert(getErrorMsg(e));
     btn.disabled = false; btn.textContent = '登入';
@@ -138,6 +148,7 @@ async function loginWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
     const result = await auth.signInWithPopup(provider);
     await ensureUserDoc(result.user);
+    await recordLogin(result.user);
   } catch (e) {
     if (e.code === 'auth/popup-blocked') {
       showAlert('彈出視窗被封鎖，請允許彈出視窗後再試', 'error');

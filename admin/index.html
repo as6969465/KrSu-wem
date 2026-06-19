@@ -84,6 +84,20 @@
       </div>
     </div>
 
+    <!-- 會員登入記錄 -->
+    <div class="card" style="margin-bottom:1.5rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h3 style="font-weight:700">會員登入記錄</h3>
+        <span id="member-count" style="font-size:.8rem;color:var(--muted)"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>姓名</th><th>電子信箱</th><th>登入次數</th><th>最後登入</th><th>註冊時間</th></tr></thead>
+          <tbody id="member-list"><tr><td colspan="5" style="text-align:center"><div class="spinner"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
     <div style="display:grid;grid-template-columns:1fr 380px;gap:1.5rem">
       <!-- 最新訂單 -->
       <div class="card">
@@ -123,7 +137,33 @@ auth.onAuthStateChanged(async user => {
   applyStoreName(' — 管理後台');
   document.getElementById('admin-name').textContent = user.displayName || user.email;
   loadDashboard();
+  loadMembers();
 });
+
+async function loadMembers() {
+  try {
+    const snap = await db.collection('users').orderBy('lastLoginAt', 'desc').get();
+    const tbody = document.getElementById('member-list');
+    document.getElementById('member-count').textContent = `共 ${snap.size} 位會員`;
+    if (snap.empty) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted)">尚無會員</td></tr>';
+      return;
+    }
+    tbody.innerHTML = snap.docs.map(d => {
+      const u = d.data();
+      return `<tr>
+        <td>${escapeHtml(u.name || '—')}</td>
+        <td style="font-size:.85rem">${escapeHtml(u.email || '—')}</td>
+        <td style="text-align:center"><span class="badge badge-info">${u.loginCount || 0} 次</span></td>
+        <td style="font-size:.8rem;color:var(--muted);white-space:nowrap">${u.lastLoginAt ? formatDate(u.lastLoginAt) : '—'}</td>
+        <td style="font-size:.8rem;color:var(--muted);white-space:nowrap">${u.createdAt ? formatDate(u.createdAt) : '—'}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('member-list').innerHTML =
+      `<tr><td colspan="5" style="text-align:center;color:var(--danger)">載入失敗：${escapeHtml(e.message)}</td></tr>`;
+  }
+}
 
 async function loadDashboard() {
   let ordersSnap, productsSnap;
