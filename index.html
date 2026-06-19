@@ -96,8 +96,9 @@ db.collection('settings').doc('general').get().then(snap => {
   if (s.instagram) { const el = document.getElementById('social-ig-btn'); el.href = s.instagram; el.style.display = ''; }
 }).catch(() => {});
 
+applyStoreName('');
+
 auth.onAuthStateChanged(user => {
-  applyStoreName('');
   if (user) {
     db.collection('admins').doc(user.uid).get()
       .then(doc => { window.location.href = doc.exists ? 'admin/index.html' : 'shop.html'; })
@@ -134,9 +135,16 @@ async function loginWithEmail() {
 
 async function loginWithGoogle() {
   try {
-    const result = await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    const provider = new firebase.auth.GoogleAuthProvider();
+    const result = await auth.signInWithPopup(provider);
     await ensureUserDoc(result.user);
-  } catch (e) { showAlert(getErrorMsg(e)); }
+  } catch (e) {
+    if (e.code === 'auth/popup-blocked') {
+      showAlert('彈出視窗被封鎖，請允許彈出視窗後再試', 'error');
+    } else {
+      showAlert(getErrorMsg(e));
+    }
+  }
 }
 
 async function doRegister() {
@@ -181,8 +189,12 @@ function getErrorMsg(e) {
     'auth/invalid-email':         '信箱格式不正確',
     'auth/weak-password':         '密碼強度不足',
     'auth/too-many-requests':     '操作次數過多，請稍後再試',
-    'auth/popup-closed-by-user':  '視窗已關閉，請重新操作',
+    'auth/popup-closed-by-user':    '視窗已關閉，請重新操作',
     'auth/cancelled-popup-request': '操作已取消，請重試',
+    'auth/popup-blocked':           '彈出視窗被封鎖，請允許後再試',
+    'auth/operation-not-allowed':   'Google 登入尚未啟用，請聯絡管理員',
+    'auth/unauthorized-domain':     '此網域未授權，請聯絡管理員',
+    'auth/network-request-failed':  '網路連線失敗，請稍後再試',
   };
   return map[e.code] || e.message;
 }
