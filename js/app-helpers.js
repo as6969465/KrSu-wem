@@ -43,6 +43,24 @@ async function applyStoreName(titleSuffix) {
   if (titleSuffix !== undefined) document.title = _storeName + (titleSuffix || '');
 }
 
+// Check admin by UID first, then by email (for Google sign-in users)
+async function checkAdmin(user) {
+  if (!user) return false;
+  const uidDoc = await db.collection('admins').doc(user.uid).get();
+  if (uidDoc.exists) return true;
+  if (!user.email) return false;
+  const emailSnap = await db.collection('settings').doc('adminEmails').get();
+  if (!emailSnap.exists) return false;
+  const emails = (emailSnap.data().emails || []);
+  if (!emails.includes(user.email)) return false;
+  // Auto-register UID for future fast-path
+  db.collection('admins').doc(user.uid).set({
+    email: user.email,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(() => {});
+  return true;
+}
+
 function formatPrice(n) {
   return 'NT$ ' + Number(n).toLocaleString('zh-TW');
 }

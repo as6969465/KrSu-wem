@@ -130,8 +130,7 @@ let coupons = [];
 
 auth.onAuthStateChanged(async user => {
   if (!user) return window.location.href = '../index.html';
-  const doc = await db.collection('admins').doc(user.uid).get();
-  if (!doc.exists) return window.location.href = '../shop.html';
+  if (!await checkAdmin(user)) return window.location.href = '../shop.html';
   applyStoreName(' — 管理後台');
   loadCoupons();
 });
