@@ -24,9 +24,10 @@ service cloud.firestore {
       allow read, update: if isOwner(resource.data.userId) || isAdmin();
     }
 
-    // 會員資料：本人可讀寫
+    // 會員資料：本人可讀寫，管理員可讀
     match /users/{uid} {
-      allow read, write: if isOwner(uid);
+      allow read: if isOwner(uid) || isAdmin();
+      allow write: if isOwner(uid);
     }
 
     // 優惠碼：登入者可讀，管理員可寫
