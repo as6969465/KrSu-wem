@@ -87,10 +87,6 @@
             <label class="form-label">超商品牌</label>
             <select id="cvs-brand" class="form-select">
               <option value="">請選擇</option>
-              <option value="7-11">7-ELEVEN</option>
-              <option value="familymart">全家</option>
-              <option value="hilife">萊爾富</option>
-              <option value="okmart">OK mart</option>
             </select>
           </div>
           <div class="form-group">
@@ -222,11 +218,27 @@ auth.onAuthStateChanged(async user => {
   loadShippingOptions();
 });
 
+const ALL_CVS = [
+  { id: '7eleven', label: '7-ELEVEN' },
+  { id: 'familymart', label: '全家' },
+  { id: 'hilife', label: '萊爾富' },
+  { id: 'okmart', label: 'OK mart' }
+];
+
 async function loadShippingOptions() {
   try {
     const snap = await db.collection('settings').doc('shipping').get();
     shippingOptions = snap.exists ? (snap.data().options || []) : defaultShipping();
-  } catch { shippingOptions = defaultShipping(); }
+    const cvsStores = (snap.exists && snap.data().cvsStores) ? snap.data().cvsStores : {};
+    const enabled = ALL_CVS.filter(s => cvsStores[s.id] !== false);
+    const sel = document.getElementById('cvs-brand');
+    sel.innerHTML = '<option value="">請選擇</option>' +
+      (enabled.length ? enabled : ALL_CVS).map(s => `<option value="${s.id}">${s.label}</option>`).join('');
+  } catch {
+    shippingOptions = defaultShipping();
+    document.getElementById('cvs-brand').innerHTML = '<option value="">請選擇</option>' +
+      ALL_CVS.map(s => `<option value="${s.id}">${s.label}</option>`).join('');
+  }
   renderShippingOptions();
 }
 

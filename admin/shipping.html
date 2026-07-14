@@ -69,30 +69,13 @@
       <button class="btn btn-primary" style="margin-top:1rem" onclick="saveOptions()">儲存設定</button>
     </div>
 
-    <!-- 超商店取說明 -->
+    <!-- 超商門市設定 -->
     <div class="card">
-      <h3 style="font-weight:700;margin-bottom:.5rem">🏪 超商店取說明</h3>
-      <p style="font-size:.9rem;color:var(--muted);margin-bottom:1rem">
-        結帳時消費者可選擇超商取貨，並自行填寫門市資訊。若需串接物流 API 自動選店，請洽 IT 工程師進行後端整合。
-      </p>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem">
-        <div style="text-align:center;padding:.75rem;border:1.5px solid var(--border);border-radius:8px">
-          <div style="font-size:1.5rem;margin-bottom:.25rem">🟢</div>
-          <div style="font-size:.85rem;font-weight:600">7-ELEVEN</div>
-        </div>
-        <div style="text-align:center;padding:.75rem;border:1.5px solid var(--border);border-radius:8px">
-          <div style="font-size:1.5rem;margin-bottom:.25rem">🔵</div>
-          <div style="font-size:.85rem;font-weight:600">全家</div>
-        </div>
-        <div style="text-align:center;padding:.75rem;border:1.5px solid var(--border);border-radius:8px">
-          <div style="font-size:1.5rem;margin-bottom:.25rem">🔴</div>
-          <div style="font-size:.85rem;font-weight:600">萊爾富</div>
-        </div>
-        <div style="text-align:center;padding:.75rem;border:1.5px solid var(--border);border-radius:8px">
-          <div style="font-size:1.5rem;margin-bottom:.25rem">🟡</div>
-          <div style="font-size:.85rem;font-weight:600">OK mart</div>
-        </div>
-      </div>
+      <h3 style="font-weight:700;margin-bottom:.5rem">🏪 可選超商門市</h3>
+      <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">勾選後，消費者在結帳時可看到並選擇對應的超商品牌。</p>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem" id="cvs-store-list"></div>
+      <div id="cvs-alert" style="margin-top:.75rem"></div>
+      <button class="btn btn-primary" style="margin-top:1rem" onclick="saveCvsStores()">儲存門市設定</button>
     </div>
 
   </div>
@@ -141,13 +124,21 @@
 <script src="/__/firebase/init.js"></script>
   <script src="../js/app-helpers.js"></script>
 <script>
+const ALL_CVS = [
+  { id: '7eleven', label: '7-ELEVEN', icon: '🟢' },
+  { id: 'familymart', label: '全家', icon: '🔵' },
+  { id: 'hilife', label: '萊爾富', icon: '🔴' },
+  { id: 'okmart', label: 'OK mart', icon: '🟡' }
+];
 let options = [];
+let cvsStores = {};
 
 auth.onAuthStateChanged(async user => {
   if (!user) return window.location.href = '../index.html';
   if (!await checkAdmin(user)) return window.location.href = '../shop.html';
   applyStoreName(' — 管理後台');
   loadOptions();
+  loadCvsStores();
 });
 
 async function loadOptions() {
@@ -213,6 +204,44 @@ function addOption() {
   options.push({ id: Date.now().toString(), label, fee, type, enabled: true });
   renderOptions();
   closeAddModal();
+}
+
+async function loadCvsStores() {
+  try {
+    const snap = await db.collection('settings').doc('shipping').get();
+    cvsStores = (snap.exists && snap.data().cvsStores) ? snap.data().cvsStores : {};
+  } catch { cvsStores = {}; }
+  // default all enabled if never configured
+  if (!Object.keys(cvsStores).length) ALL_CVS.forEach(s => { cvsStores[s.id] = true; });
+  renderCvsStores();
+}
+
+function renderCvsStores() {
+  document.getElementById('cvs-store-list').innerHTML = ALL_CVS.map(s => {
+    const on = cvsStores[s.id] !== false;
+    return `<label style="display:flex;flex-direction:column;align-items:center;gap:.5rem;padding:.9rem .75rem;border:2px solid ${on ? 'var(--accent)' : 'var(--border)'};border-radius:10px;cursor:pointer;transition:border-color .15s;background:${on ? 'rgba(0,102,204,.04)' : '#fff'}">
+      <input type="checkbox" ${on ? 'checked' : ''} data-sid="${s.id}" onchange="toggleCvs('${s.id}',this.checked)" style="display:none">
+      <span style="font-size:1.6rem">${s.icon}</span>
+      <span style="font-size:.85rem;font-weight:600">${s.label}</span>
+      <span style="font-size:.75rem;color:${on ? 'var(--accent)' : 'var(--muted)'}">${on ? '✓ 啟用' : '停用'}</span>
+    </label>`;
+  }).join('');
+}
+
+function toggleCvs(id, enabled) {
+  cvsStores[id] = enabled;
+  renderCvsStores();
+}
+
+async function saveCvsStores() {
+  const alertEl = document.getElementById('cvs-alert');
+  try {
+    await db.collection('settings').doc('shipping').set({ cvsStores, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true });
+    alertEl.innerHTML = '<div class="alert alert-success">門市設定已儲存 ✓</div>';
+    setTimeout(() => alertEl.innerHTML = '', 3000);
+  } catch(e) {
+    alertEl.innerHTML = `<div class="alert alert-error">儲存失敗：${e.message}</div>`;
+  }
 }
 
 function doLogout() { auth.signOut().then(() => window.location.href = '../index.html'); }
