@@ -35,9 +35,9 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // 管理員清單：本人可讀（用於判斷是否為管理員），管理員可寫
+    // 管理員清單：本人可讀自己的文件，管理員可讀所有文件及寫入
     match /admins/{uid} {
-      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow read: if isSignedIn() && (request.auth.uid == uid || isAdmin());
       allow write: if isAdmin();
     }
 
