@@ -121,10 +121,13 @@ function clearAlert() { document.getElementById('alert-box').innerHTML = ''; }
 
 async function recordLogin(user) {
   try {
-    await db.collection('users').doc(user.uid).set({
+    const update = {
       loginCount: firebase.firestore.FieldValue.increment(1),
       lastLoginAt: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
+    };
+    if (user.email) update.email = user.email;
+    if (user.displayName) update.name = user.displayName;
+    await db.collection('users').doc(user.uid).set(update, { merge: true });
   } catch(e) {}
 }
 
