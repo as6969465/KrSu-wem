@@ -128,20 +128,6 @@
       <button class="btn btn-primary" style="margin-top:1rem" onclick="saveBanners()">儲存公告</button>
     </div>
 
-    <!-- 管理員設定 -->
-    <div class="card">
-      <h3 style="font-weight:700;margin-bottom:1rem">👤 管理員帳號</h3>
-      <p style="font-size:.85rem;color:var(--muted);margin-bottom:1rem">
-        在 Firestore 中，<code style="background:#f1f5f9;padding:.1rem .4rem;border-radius:4px">admins/{uid}</code> 集合內有文件的使用者即為管理員。
-        新增管理員請於 Firebase Console 手動建立文件，或透過以下工具指定 UID。
-      </p>
-      <div style="display:flex;gap:.75rem">
-        <input id="admin-uid" type="text" class="form-input" placeholder="貼上要授權的使用者 UID">
-        <button class="btn btn-outline" onclick="addAdmin()">授權</button>
-      </div>
-      <div id="admin-alert" style="margin-top:.75rem"></div>
-    </div>
-
     <!-- 管理員帳號列表 -->
     <div class="card">
       <h3 style="font-weight:700;margin-bottom:1rem">🛡️ 目前管理員帳號</h3>
